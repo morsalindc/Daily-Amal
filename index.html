@@ -21,8 +21,8 @@ header h1{font-size:18px;margin:0;font-weight:700}
 header small{opacity:.85;font-size:12px}
 main{padding:12px 12px calc(84px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
 nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:6}
-nav button{flex:1;border:0;background:none;color:var(--mute);padding:8px 2px 6px;font:inherit;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:0}
-nav button span{font-size:20px;line-height:1.2}
+nav button{flex:1;border:0;background:none;color:var(--mute);padding:8px 2px 6px;font:inherit;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:0}
+nav button span{font-size:18px;line-height:1.2}
 nav button.on{color:var(--pri);font-weight:700}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
 .card h2,.card h3{margin:0 0 6px;font-size:16px}
@@ -51,7 +51,7 @@ details[open] summary::after{content:"－"}
 details .in{padding-bottom:12px;font-size:15px}
 details h4{margin:12px 0 4px;color:var(--pri);font-size:15px}
 details ul{margin:4px 0;padding-left:20px}
-table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
 th,td{border:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
 th{background:var(--pri2)}
 .note{background:var(--pri2);border-radius:10px;padding:8px 10px;font-size:14px;margin:8px 0}
@@ -64,6 +64,9 @@ th{background:var(--pri2)}
 .chips label{display:flex;align-items:center;gap:6px}
 .auto{background:var(--pri2);color:var(--pri);border-radius:8px;padding:6px 10px;font-weight:700}
 .section-title{font-weight:700;margin:12px 0 4px;color:var(--pri);font-size:15px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+.stat-box{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.stat-card{background:var(--pri2);border-radius:10px;padding:10px;text-align:center}
+.stat-card b{display:block;font-size:18px;color:var(--pri)}
 </style>
 </head>
 <body>
@@ -71,12 +74,13 @@ th{background:var(--pri2)}
 <main id="app"></main>
 <nav id="nav">
   <button data-v="today"><span>✅</span>আজ</button>
+  <button data-v="stats"><span>📊</span>স্টেট</button>
   <button data-v="guide"><span>📖</span>গাইড</button>
   <button data-v="month"><span>📅</span>মাসিক</button>
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 <script>
-const VERSION='1.2.2';
+const VERSION='1.3.0';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -119,8 +123,15 @@ const OTHER_ITEMS=[
  ['f14','ঘুমের আগে ওযু, দোয়া ও তাওবা করেছি']
 ];
 
-const SALAT_LIST=[['fajr', 'ফজর সালাত'],['zuhr', 'যোহর সালাত'],['asr', 'আসর সালাত'],['maghrib', 'মাগরিব সালাত'],['isha', 'ইশা সালাত']];
-const SALAT_STATUSES=[['', '-- স্ট্যাটাস সিলেক্ট করুন --'],['jamaat', 'জামাতে আদায়'],['alone_on_time', 'একা (সময়মতো)'],['alone_late', 'একা (দেরিতে)'],['qada', 'কাজা আদায়'],['miss', 'মিস / ছুটেছে']];
+const SALAT_LIST=[['fajr', 'ফজর'],['zuhr', 'যোহর'],['asr', 'আসর'],['maghrib', 'মাগরিব'],['isha', 'ইশা']];
+const SALAT_STATUSES=[
+  ['', '-- স্ট্যাটাস নেই --'],
+  ['jamaat', 'জামাতে আদায়'],
+  ['alone_on_time', 'একা (সময়মতো)'],
+  ['alone_late', 'একা (দেরিতে)'],
+  ['qada', 'কাজা আদায়'],
+  ['miss', 'মিস / ছুটেছে']
+];
 const SUNNAH_LIST=[['fajr_sunnah', 'ফজরের ২ রাকাত সুন্নত'],['zuhr_before', 'যোহরের আগের ৪ রাকাত সুন্নত'],['zuhr_after', 'যোহরের পরের ২ রাকাত সুন্নত'],['maghrib_after', 'মাগরিবের পরের ২ রাকাত সুন্নত'],['isha_after', 'ইশার পরের ২ রাকাত সুন্নত'],['witr', 'বিতর ওয়াজিব সালাত']];
 
 function hijri(date){
@@ -163,12 +174,11 @@ function specials(date){
   return out;
 }
 
-let view='today',cur=new Date(),mcur=new Date();
+let view='today',cur=new Date(),mcur=new Date(), statFilter='month';
 function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 
 function getTotalChecklistCount(){ return SALAT_LIST.length + SUNNAH_LIST.length + OTHER_ITEMS.length; }
-
 function getCompletedCount(d){
   let count = 0;
   SALAT_LIST.forEach(([id])=>{ if(d.salats[id] && d.salats[id] !== 'miss') count++; });
@@ -176,13 +186,7 @@ function getCompletedCount(d){
   OTHER_ITEMS.forEach(([id])=>{ if(d.c[id]) count++; });
   return count;
 }
-
-function pct(k){
-  const d=S.days[k];
-  if(!d)return 0;
-  return getCompletedCount(d)/getTotalChecklistCount();
-}
-
+function pct(k){ const d=S.days[k]; if(!d)return 0; return getCompletedCount(d)/getTotalChecklistCount(); }
 function streak(){
   let n=0,d=new Date();
   if(pct(dkey(d))<0.4) d.setDate(d.getDate()-1);
@@ -190,6 +194,63 @@ function streak(){
   return n;
 }
 
+/* ---------- Stats / State View ---------- */
+function renderStats(){
+  const ym=mkey(mcur);
+  let daysKeys = Object.keys(S.days).filter(k=>{
+    if(statFilter==='month') return k.slice(0,7)===ym;
+    return true; // all time
+  });
+
+  // হিসাব নিকাশ
+  let stats = {
+    jamaat: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
+    alone_on_time: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
+    alone_late: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
+    qada: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
+    miss: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
+    totalDays: daysKeys.length
+  };
+
+  daysKeys.forEach(k=>{
+    const d=S.days[k];
+    if(d && d.salats){
+      SALAT_LIST.forEach(([id])=>{
+        let st=d.salats[id];
+        if(st && stats[st]) stats[st][id]++;
+      });
+    }
+  });
+
+  let html=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>🕌 সালাত ট্র্যাকিং স্টেট (পরিসংখ্যান)</h3>
+      <select id="stat-filter" class="sm" style="width:110px">
+        <option value="month"${statFilter==='month'?' selected':''}>চলতি মাস</option>
+        <option value="all"${statFilter==='all'?' selected':''}>সব সময়</option>
+      </select>
+    </div>
+    <div class="mute">মোট পঠিত দিনসমূহ: ${bn(stats.totalDays)} দিন</div>
+  </div>`;
+
+  SALAT_LIST.forEach(([id, name])=>{
+    html+=`<div class="card">
+      <h3>${name} সালাতের বিবরণ</h3>
+      <div class="stat-box">
+        <div class="stat-card"><small>জামাতে</small><b>${bn(stats.jamaat[id])}</b></div>
+        <div class="stat-card"><small>একা (সময়মতো)</small><b>${bn(stats.alone_on_time[id])}</b></div>
+        <div class="stat-card"><small>একা (দেরিতে)</small><b>${bn(stats.alone_late[id])}</b></div>
+        <div class="stat-card"><small>কাজা</small><b>${bn(stats.qada[id])}</b></div>
+      </div>
+      <div class="mute" style="margin-top:6px">মিস / ছুটেছে: <b style="color:#d9534f">${bn(stats.miss[id])}</b> বার</div>
+    </div>`;
+  });
+
+  $('#app').innerHTML=html;
+  $('#stat-filter').onchange=e=>{ statFilter=e.target.value; renderStats(); };
+}
+
+/* ---------- Today View ---------- */
 function renderToday(){
   const k=dkey(cur),d=day(k),h=hijri(cur);
   const isToday=k===dkey(new Date());
@@ -207,7 +268,7 @@ function renderToday(){
   
   html+=`<div class="section-title">🕌 পাঁচ ওয়াক্ত ফরজ সালাত</div>`;
   SALAT_LIST.forEach(([id, label])=>{
-    html+=`<div class="row"><label>${label}</label><select class="sm salat-sel" data-salat="${id}">`;
+    html+=`<div class="row"><label>${label} সালাত</label><select class="sm salat-sel" data-salat="${id}">`;
     SALAT_STATUSES.forEach(([val, txt])=>{
       let sel = (d.salats[id] === val) ? ' selected' : '';
       html+=`<option value="${val}"${sel}>${txt}</option>`;
@@ -270,6 +331,7 @@ function renderToday(){
   prog();
 }
 
+/* ---------- Guide View ---------- */
 const GUIDE=[
 ['১. নিত্য পাঁচ ওয়াক্ত সালাত ও জামাত',`<p class="mute">নিয়ম: আমলের ক্ষেত্রে ফরজ ও ওয়াজিব সবার আগে, এরপর সুন্নত ও নফল।</p>`],
 ['২. তাহাজ্জুদ, যিকির ও দোয়া',`<p class="mute">রাতের শেষ তৃতীয়াংশে তাহাজ্জুদ ও জিকির।</p>`],
@@ -286,6 +348,7 @@ function renderGuide(){
   `<div class="card ar" style="color:var(--pri)">رَبَّنَا تَقَبَّلْ مِنَّا ۖ إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ<div class="mute" style="direction:ltr;font-size:14px">হে আমাদের রব, আমাদের পক্ষ থেকে কবুল করুন; নিশ্চয়ই আপনি সর্বশ্রোতা, সর্বজ্ঞ।</div></div>`;
 }
 
+/* ---------- Monthly Review View ---------- */
 const MROWS=[
  ['jamaat','৫ ওয়াক্ত সালাত জামাতে আদায় (দিন সংখ্যা)','M_SALAT','৫ ওয়াক্তই জামাতে'],
  ['tahajjud','তাহাজ্জুদ (রাত সংখ্যা)','A:f3'],
@@ -345,6 +408,7 @@ function renderMonth(){
   document.querySelectorAll('[data-s]').forEach(el=>el.oninput=()=>{M[el.dataset.s]=el.value;save()});
 }
 
+/* ---------- More / Settings View ---------- */
 let deferred=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(view==='more')render()});
 function renderMore(){
@@ -388,6 +452,7 @@ function renderMore(){
 
 function render(){
   if(view==='today')renderToday();
+  else if(view=== 'stats')renderStats();
   else if(view==='guide')renderGuide();
   else if(view==='month')renderMonth();
   else renderMore();
@@ -395,7 +460,7 @@ function render(){
 setView('today');
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}))
 }
 </script>
 </body>
