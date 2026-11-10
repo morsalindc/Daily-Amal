@@ -51,10 +51,17 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:"＋";float:right;color:var(--pri)}
 details[open] summary::after{content:"－"}
 details .in{padding-bottom:12px;font-size:15px}
+details h4{margin:12px 0 4px;color:var(--pri);font-size:15px}
+details ul{margin:4px 0;padding-left:20px}
 table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
 th,td{border:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
 th{background:var(--pri2)}
-.ar{font-size:22px;text-align:center;direction:rtl;margin:12px 0;color:var(--pri);font-weight:600}
+.note{background:var(--pri2);border-radius:10px;padding:8px 10px;font-size:14px;margin:8px 0}
+.ar{font-size:20px;text-align:center;direction:rtl;margin:10px 0;color:var(--pri)}
+.mrow{padding:10px 0;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow .t{font-weight:600;font-size:15px;margin-bottom:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .section-title{font-weight:700;margin:14px 0 6px;color:var(--pri);font-size:15px;border-bottom:2px solid var(--pri2);padding-bottom:4px}
 .stat-box{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .stat-card{background:var(--pri2);border-radius:10px;padding:10px;text-align:center}
@@ -64,34 +71,27 @@ th{background:var(--pri2)}
 .cal-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:4px;text-align:center;margin-top:8px;font-size:12px}
 .cal-day{background:var(--bg);border-radius:6px;padding:6px 2px;color:var(--mute);cursor:pointer}
 .cal-day.active{background:var(--pri);color:#fff;font-weight:700}
-/* Modal & Slide styling */
+/* Modal Popup Styling */
 #modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
-#modal-box{background:var(--card);width:100%;max-width:540px;max-height:90vh;border-radius:16px;padding:16px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
-.step-card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
-.step-badge{background:var(--pri2);color:var(--pri);padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700}
-/* Home Salat Grid */
-.home-salat-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;text-align:center;margin-top:10px}
-.home-salat-box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 4px}
-.home-salat-box.active{border:2px solid var(--pri);background:var(--pri2)}
+#modal-box{background:var(--card);width:100%;max-width:500px;max-height:85vh;border-radius:16px;padding:16px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
 </style>
 </head>
 <body>
 <header><h1>আমলের গাইড</h1><small id="ver"></small></header>
 <main id="app"></main>
 <nav id="nav">
-  <button data-v="home"><span>🏠</span>হোম</button>
-  <button data-v="tracker"><span>✅</span>ট্র্যাকার</button>
+  <button data-v="today"><span>✅</span>আজ</button>
   <button data-v="stats"><span>📊</span>স্টেট</button>
-  <button data-v="learn"><span>📖</span>শিখুন</button>
+  <button data-v="guide"><span>📖</span>গাইড</button>
   <button data-v="month"><span>📅</span>ছুটি ও মাস</button>
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 
-<!-- Modal Container for Learn/Read Steps -->
+<!-- Modal Container -->
 <div id="modal" style="display:none">
   <div id="modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px">
-      <h3 id="modal-title" style="margin:0;color:var(--pri)">শিক্ষা ও রেফারেন্স</h3>
+      <h3 id="modal-title" style="margin:0;color:var(--pri)">বিবরণ</h3>
       <button class="btn alt" id="modal-close" style="padding:4px 10px;font-size:13px">✕ বন্ধ</button>
     </div>
     <div id="modal-content"></div>
@@ -99,7 +99,7 @@ th{background:var(--pri2)}
 </div>
 
 <script>
-const VERSION='1.8.1';
+const VERSION='1.7.0';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -145,53 +145,96 @@ const SUNNAH_LIST=[
   ['witr', 'বিতর ওয়াজিব সালাত']
 ];
 
-/* ধাপে ধাপে শেখার রেফারেন্স ডেটাসেট (শিখুন ট্যাবের জন্য) */
-const LEARN_DETAILS = {
+/* বাংলা দোয়া কন্টেন্ট ডাটাবেস (পড়ুন বাটনের জন্য) */
+const PRAYER_DETAILS = {
   am_dhikr: {
     title: 'সকাল বেলার মাসনুন আমল ও দোয়া',
-    steps: [
-      { num: '১', title: 'আশ্রয় চান, তারপর শুরু করুন', desc: 'তাআউশ শুধু প্রথম রাকাতেও একবার পড়তে হয়।', ar: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ ؀ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', pron: "A'uzu billahi minash-shaytanir-rajim — Bismillahir-Rahmanir-Rahim", trans: 'আমি বিতাড়িত শয়তান থেকে আল্লাহর আশ্রয় চাই। পরম করুণাময় অসীম দয়ালু আল্লাহর নামে।' },
-      { num: '২', title: 'সকাল ও সন্ধ্যার তাসবিহ', desc: 'নিয়মিত সকাল ও সন্ধ্যায় পাঠ করার মাসনুন আমল।', ar: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', pron: 'Subhanallahi wa bi-hamdihi', trans: 'আল্লাহ পবিত্র এবং সমস্ত প্রশংসা তাঁরই জন্য।' }
-    ]
+    content: `<h4>১. আয়াতুল কুরসি</h4><p><b>আরবি:</b> اللَّهُ لا إِلَهَ إِلا هُوَ الْحَيُّ الْقَيُّومُ...</p><p><b>উচ্চারণ:</b> আল্লা-হু লা ইলা-হা ইল্লা হুওয়াল হাইয়ুল কাইয়্যুম...</p><p><b>অনুবাদ:</b> আল্লাহ ছাড়া কোনো উপাস্য নেই, তিনি চিরঞ্জীব ও সবকিছুর ধারক।</p><hr>`+
+    `<h4>২. সাইয়েদুল ইস্তেগফার</h4><p><b>আরবি:</b> اللَّهُمَّ أَنْتَ رَبِّي لا إِلهَ إِلا أَنْتَ خَلَقْتَنِي...</p><p><b>উচ্চারণ:</b> আল্লাহুম্মা আন্তা রব্বী লা ইলাহা ইল্লা আন্তা খালাকতানি...</p><p><b>অনুবাদ:</b> হে আল্লাহ, আপনি আমার রব। আপনি ছাড়া কোনো ইলাহ নেই। আপনি আমাকে সৃষ্টি করেছেন...</p>`
   },
   pm_dhikr: {
     title: 'সন্ধ্যা বেলার মাসনুন আমল ও দোয়া',
-    steps: [
-      { num: '১', title: 'সন্ধ্যায় পড়ার দোয়া', desc: 'আসরের পর থেকে মাগরিবের মধ্যে পড়তে হয়।', ar: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ', pron: 'Amsayna wa amsal mulku lillah walhamdu lillah', trans: 'আমরা সন্ধ্যা করলাম এবং সমগ্র রাজত্ব আল্লাহর জন্যই।' }
-    ]
+    content: `<h4>সন্ধ্যায় পড়ার দোয়া</h4><p><b>আরবি:</b> أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ...</p><p><b>উচ্চারণ:</b> আমসাইনা ওয়া আমসাল মুল্কু লিল্লাহে ওয়াল হামদু লিল্লাহে...</p><p><b>অনুবাদ:</b> আমরা সন্ধ্যা করলাম এবং সমগ্র রাজত্ব আল্লাহর জন্যই এবং সমস্ত প্রশংসা আল্লাহর।</p>`
   },
   post_salat_dhikr: {
-    title: 'পাঁচ ওয়াক্ত নামাজের পরের আমল',
-    steps: [
-      { num: '১', title: 'তাসবীহাতে ফাতেমী', desc: 'ফরজ সালাতের পর নিয়মিত আমল।', ar: 'سُبْحَانَ اللَّهِ (৩৩ বার), الْحَمْدُ لِلَّهِ (৩৩ বার), اللَّهُ أَكْبَرُ (৩৪ বার)', pron: 'Subhanallah, Alhamdulillah, Allahu Akbar', trans: 'আল্লাহ পবিত্র, সমস্ত প্রশংসা আল্লাহর, আল্লাহ সবচেয়ে বড়।' }
-    ]
+    title: 'ফরজ সালাতের পরের যিকির',
+    content: `<h4>তাসবীহাতে ফাতেমী</h4><p><b>সুবহানাল্লাহ</b> ৩৩ বার, <b>আলহামদুলিল্লাহ</b> ৩৩ বার, <b>আল্লাহু আকবার</b> ৩৪ বার।</p>`
   },
   quran_recite: {
-    title: 'কুরআন তিলাওয়াত',
-    steps: [
-      { num: '১', title: 'নিয়মিত তিলাওয়াত', desc: 'প্রতিটি হরফে ১০টি করে নেকি রয়েছে।', ar: 'وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا', pron: 'Wa rattilil qurana tarteela', trans: 'এবং কুরআন আবৃত্তি করো ধীরস্থির ও সুন্দরভাবে।' }
-    ]
+    title: 'কুরআন তিলাওয়াতের ফজিলত',
+    content: `<p>প্রতিটি হরফ তিলাওয়াতের জন্য দশটি নেকি রয়েছে। নিয়মিত অন্তত এক রুকু বা পৃষ্ঠা তিলাওয়াত করুন।</p>`
+  },
+  quran_memo: {
+    title: 'কুরআন মুখস্থ বা রিভিশন',
+    content: `<p>অল্প হলেও প্রতিদিন নতুন কিছু মুখস্থ করুন অথবা আগের মুখস্থ করা অংশগুলো দোররা (রিভিশন) দিন।</p>`
   },
   istighfar: {
-    title: 'ইস্তেগফার',
-    steps: [
-      { num: '১', title: 'ক্ষমা প্রার্থনা', desc: 'প্রতিদিন অন্তত ১০০ বার ইস্তেগফার করা।', ar: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', pron: 'Astaghfirullaha wa atubu ilayh', trans: 'আমি আল্লাহর কাছে ক্ষমা চাই এবং তাঁরই দিকে ফিরে আসি।' }
-    ]
+    title: 'ইস্তেগফারের গুরুত্ব ও দোয়া',
+    content: `<p><b>সবচেয়ে ছোট ইস্তেগফার:</b></p><p><b>আরবি:</b> أَسْتَغْفِرُ اللَّهَ</p><p><b>উচ্চারণ:</b> আস্তাগফিরুল্লাহা</p><p><b>অনুবাদ:</b> আমি আল্লাহর কাছে ক্ষমা প্রার্থনা করছি।</p>`
   },
   durud: {
-    title: 'দরুদ শরিফ',
-    steps: [
-      { num: '১', title: 'দরুদ পাঠ', desc: 'নবীজির ওপর সালাত ও সালাম পেশ করা।', ar: 'صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ', pron: 'Sallallahu alayhi wa sallam', trans: 'আল্লাহ তাআলা তাঁর ওপর শান্তি ও রহমত বর্ষণ করুন।' }
-    ]
+    title: 'দরুদ শরিফের গুরুত্ব',
+    content: `<p><b>ছোট দরুদ শরিফ:</b></p><p><b>আরবি:</b> صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ</p><p><b>উচ্চারণ:</b> সাল্লাল্লাহু আলাইহি ওয়াসাল্লাম</p><p><b>অনুবাদ:</b> আল্লাহ তাআলা তাঁর ওপর শান্তি ও রহমত বর্ষণ করুন।</p>`
+  },
+  asmul_husna: {
+    title: 'আল্লাহর ৯৯টি সুন্দর নাম (আসমাউল হুসনা)',
+    content: `<p>আল্লাহ তাআলার ৯৯টি সুন্দর নাম মুখস্থ করা এবং এর অর্থের ওপর আমল করা অত্যন্ত ফজিলতপূর্ণ।</p>`
+  },
+  sleep_wudu: {
+    title: 'ওজুসহ ঘুমানোর দোয়া',
+    content: `<p>ঘুমানোর পূর্বে ওজু করে পবিত্র হয়ে শোয়া সুন্নত। রাসূলুল্লাহ (সা.) ওজু করে ঘুমানোর নির্দেশ দিয়েছেন।</p>`
   },
   sleep_dua: {
     title: 'ঘুমের দোয়া',
-    steps: [
-      { num: '১', title: 'ঘুমানোর সময় দোয়া', desc: 'বিছানায় যাওয়ার সময় পড়ার দোয়া।', ar: 'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا', pron: 'Bismikall-humma amootu wa ahya', trans: 'হে আল্লাহ, আপনার নামেই আমি মৃত্যুবরণ করি এবং জীবিত হই।' }
-    ]
+    content: `<p><b>আরবি:</b> بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا</p><p><b>উচ্চারণ:</b> বিসমিকাল্লাহুম্মা আমুতু ওয়া আহইয়া</p><p><b>অনুবাদ:</b> হে আল্লাহ, আপনার নামেই আমি মৃত্যুবরণ করি (ঘুমাই) এবং জীবিত হই (জাগি)।</p>`
+  },
+  sleep_surahs: {
+    title: 'তিন কুল ও ফু দেওয়ার নিয়ম',
+    content: `<p>সূরা ইখলাস, সূরা ফালাক ও সূরা নাস ৩ বার পড়ে উভয় হাতে ফু দিয়ে পুরো শরীরে হাত বুলিয়ে নেওয়া।</p>`
+  },
+  sleep_baqarah: {
+    title: 'সূরা বাকারার শেষ দুই আয়াত',
+    content: `<p>রাতে যে ব্যক্তি সূরা বাকারার শেষ দুই আয়াত পাঠ করবে, তা তার জন্য যথেষ্ট হবে।</p>`
+  },
+  sleep_kursi: {
+    title: 'আয়াতুল কুরসি পাঠ',
+    content: `<p>ঘুমানোর পূর্বে আয়াতুল কুরসি পাঠ করলে সারারাত আল্লাহর পক্ষ থেকে একজন রক্ষক পাহারা দেয় এবং শয়তান কাছে আসে না।</p>`
+  },
+  do_parents: {
+    title: 'বাবা-মায়ের হক ও দোয়া',
+    content: `<p><b>দোয়া:</b></p><p><b>আরবি:</b> رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا</p><p><b>উচ্চারণ:</b> রাব্বির হামহুমা কামা রাব্বাইয়ানি সগীরা</p><p><b>অনুবাদ:</b> হে আমার রব, তাদের উভয়ের প্রতি রহম করুন যেমন তারা শৈশবে আমাকে লালন-পালন করেছেন।</p>`
+  },
+  do_wife: {
+    title: 'স্ত্রীর হক ও সুসম্পর্ক',
+    content: `<p>উত্তম চরিত্র ও হাসিমুখে স্ত্রীর সাথে আচরণ করা রাসূলুল্লাহ (সা.)-এর সুন্নাহ।</p>`
+  },
+  do_relatives: {
+    title: 'আত্মীয়দের খোঁজখবর (সিলায়ে রেহমি)',
+    content: `<p>আত্মীয়তার সম্পর্ক বজায় রাখলে রিজিক ও আয়ূতে বরকত লাভ হয়।</p>`
+  },
+  do_talim: {
+    title: 'ঘরোয়া তালিম',
+    content: `<p>পরিবারের সবাইকে নিয়ে প্রতিদিন অন্তত ১০-১৫ মিনিট দ্বীনি বই বা ফাজায়েলে আমল পড়া।</p>`
+  },
+  do_help: {
+    title: 'কারো উপকার করা',
+    content: `<p>সৃষ্টিকুলের প্রতি দয়া প্রদর্শন করলে আসমান থেকেও আল্লাহর রহমত অবতীর্ণ হয়।</p>`
+  },
+  do_sadaqah: {
+    title: 'সাদাকা বা দান',
+    content: `<p>প্রতিদিন সামান্য হলেও সদাকা করুন, তা বালা-মুসিবত দূর করে।</p>`
+  },
+  do_salam: {
+    title: 'সালামের প্রসার',
+    content: `<p>পরিচিত ও অপরিচিত সবাইকে বেশি বেশি সালাম দিন। আসসালামু আলাইকুম বলা পারস্পরিক ভালোবাসা বৃদ্ধি করে।</p>`
+  },
+  do_miswak: {
+    title: 'মেসওয়াক করার সুন্নাহ',
+    content: `<p>প্রতিবার ওজুর সময়, নামাজে দাঁড়ানোর সময় এবং ঘুম থেকে জেগে মেসওয়াক করা সুন্নতে মুয়াক্কাদা।</p>`
   }
 };
 
+/* ক্যাটাগরি ও আমল লিস্ট */
 const CATEGORIES = [
   {
     title: '🕌 নফল নামাজ',
@@ -270,28 +313,9 @@ const CATEGORIES = [
   }
 ];
 
-function showLearnModal(key){
-  let detail = LEARN_DETAILS[key] || {
-    title: 'বিস্তারিত শিক্ষা',
-    steps: [{ num: '১', title: 'আমলের নিয়ম', desc: 'নিয়মিত এই আমলটি পালন করুন।', ar: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', pron: 'Bismillahir-Rahmanir-Rahim', trans: 'পরম করুণাময় অসীম দয়ালু আল্লাহর নামে।' }]
-  };
-  
-  let html = `<h3 style="color:var(--pri)">${detail.title}</h3>`;
-  detail.steps.forEach(st => {
-    html += `<div class="step-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span class="step-badge">ধাপ ${st.num}</span>
-        <b style="font-size:15px">${st.title}</b>
-      </div>
-      <p style="margin:4px 0;font-size:14px">${st.desc}</p>
-      <div class="ar">${st.ar}</div>
-      <p style="font-size:13px;font-style:italic;color:var(--mute);margin:4px 0">${st.pron}</p>
-      <p style="font-size:14px;margin:4px 0"><b>অর্থ:</b> ${st.trans}</p>
-    </div>`;
-  });
-  
-  $('#modal-title').textContent = detail.title;
-  $('#modal-content').innerHTML = html;
+function showModal(title, htmlContent){
+  $('#modal-title').textContent = title;
+  $('#modal-content').innerHTML = htmlContent;
   $('#modal').style.display = 'flex';
 }
 $('#modal-close').onclick = () => $('#modal').style.display = 'none';
@@ -307,19 +331,41 @@ function hijri(date){
   }catch(e){return null}
 }
 
-let view='home',cur=new Date(),mcur=new Date();
+const WEEKLY={
+ 0:'পরিবারকে নিয়ে দ্বীনি আলোচনা বা একসাথে কুরআন পাঠ; সপ্তাহের পর্যালোচনা।',
+ 1:'সুন্নত নফল রোজা রাখুন; পরিবারের সবার খোঁজখবর নিন; সপ্তাহের কাজের নিয়ত ঠিক করুন।',
+ 2:'সাদাকা করুন (সামর্থ্য অনুযায়ী); কুরআনের তাফসির অধ্যয়নে সময় দিন।',
+ 3:'আত্মীয়-স্বজনের সাথে যোগাযোগ (সিলায়ে রেহমি); দোয়া ও ইস্তিগফারে সময় বাড়ান।',
+ 4:'সুন্নত নফল রোজা; সপ্তাহের আমলের হিসাব; কবর জিয়ারত ও মৃতদের জন্য দোয়া।',
+ 5:'জুমার দিন: গোসল, পরিষ্কার পোশাক, আগে মসজিদে যাওয়া, সূরা কাহফ, বেশি দরূদ, আসরের পর দোয়া, সাদাকা।',
+ 6:'দ্বীনি ইলমের মজলিসে বসুন বা দ্বীনি বই পড়ুন; অসুস্থ বা অসহায়কে দেখতে যান।'
+};
+
+function specials(date){
+  const out=[],wd=date.getDay(),h=hijri(date);
+  out.push('📌 '+WD[wd]+': '+WEEKLY[wd]);
+  if(h){
+    const {d,m}=h;
+    const noFast=(m===10&&d===1)||(m===12&&d>=10&&d<=13);
+    if(noFast) out.push('🚫 আজ রোজা রাখা নিষিদ্ধ (ঈদ/তাশরীকের দিন)।');
+    else if(d>=13&&d<=15) out.push('🌙 আইয়্যামে বীজের রোজার দিন (হিজরি '+bn(d)+' '+HM[m-1]+')। নিয়ত করে সাহরি খান।');
+    if(m===1&&(d===9||d===10||d===11)) out.push('🤲 আশুরার রোজা রাখার সময় (৯ ও ১০, অথবা ১০ ও ১১ মুহাররম)।');
+    if(m===3) out.push('📖 রবিউল আউয়াল: সিরাতুন্নবী ﷺ অধ্যয়ন করুন।');
+    if(m===8) out.push('🌿 শা\u2019বান: নফল রোজা বাড়ানো ও রমজানের প্রস্তুতির মাস।');
+    if(m===9&&d>=21) out.push('✨ রমজানের শেষ দশক: ই\u2019তিকাফ ও লাইলাতুল কদর অনুসন্ধান (বেজোড় রাত)।');
+    else if(m===9) out.push('🌙 রমজান: সিয়াম, তারাবিহ, কুরআন খতম, বেশি দান, যাকাত ও সাদাকাতুল ফিতর।');
+    if(m===10&&d>1) out.push('📆 শাওয়ালের ছয় রোজা রাখার সময়।');
+    if(m===12&&d<=9) out.push('⭐ জিলহজের প্রথম ১০ দিন: বেশি বেশি যিকির-তাকবীর-তাহলিল।'+(d===9?' আজ আরাফার দিন (হাজি নন এমনদের জন্য রোজা)।':''));
+  }
+  if(wd===1||wd===4){ if(!out.some(x=>x.startsWith('🚫'))) out.push('🕊️ সোমবার/বৃহস্পতিবার: নফল রোজার সুন্নত দিন।'); }
+  return out;
+}
+
+let view='today',cur=new Date(),mcur=new Date();
 let statFilter='month', customStart='', customEnd='';
 
-function setView(v){
-  view=v;
-  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  render();
-  window.scrollTo(0,0);
-}
-document.getElementById('nav').addEventListener('click',e=>{
-  const b=e.target.closest('button');
-  if(b && b.dataset.v) setView(b.dataset.v);
-});
+function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 
 function getTotalChecklistCount(){ 
   let count = SALAT_LIST.length + SUNNAH_LIST.length;
@@ -349,55 +395,6 @@ function streak(){
   if(pct(dkey(d))<0.4) d.setDate(d.getDate()-1);
   while(pct(dkey(d))>=0.4){n++;d.setDate(d.getDate()-1);if(n>3650)break}
   return n;
-}
-
-/* ---------- Home View ---------- */
-function renderHome(){
-  const today = new Date();
-  const h = hijri(today);
-  const k = dkey(today);
-  const d = day(k);
-
-  let html = `<div class="card" style="background:var(--pri);color:#fff;border-radius:16px;padding:16px">
-    <div style="font-size:18px;font-weight:700">${h?bn(h.d)+' '+HM[h.m-1]+', '+bn(h.y)+' হিজরি':''}</div>
-    <div style="opacity:.9;font-size:14px;margin-top:2px">${WD[today.getDay()]} , ${bn(today.getDate())} ${GM[today.getMonth()]}, হেমন্তকাল</div>
-    
-    <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:14px;margin-top:14px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <small style="opacity:.8">পরবর্তী নামাজ</small>
-        <div style="font-size:22px;font-weight:700">ফজর</div>
-        <div style="font-size:13px">⏰ শুরু ৪:০৫ AM</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:16px;font-weight:700">৪২:৪৭ পরে</div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:14px">
-      <span>📍 আমার অবস্থান</span>
-      <span style="cursor:pointer;text-decoration:underline" id="to-tracker">নামাজের সময় ›</span>
-    </div>
-  </div>`;
-
-  html += `<div class="card">
-    <h3>আজকের নামাজ</h3>
-    <div class="mute">৪ এর মধ্যে ০</div>
-    <div class="home-salat-grid">`;
-  
-  SALAT_LIST.forEach(([id, name])=>{
-    let st = d.salats[id];
-    let activeClass = st ? ' active' : '';
-    let stText = st ? SALAT_STATUSES.find(x=>x[0]===st)[1] : 'ওয়াক্ত হয়নি';
-    html += `<div class="home-salat-box${activeClass}">
-      <div style="font-weight:700;font-size:14px">${name}</div>
-      <div style="font-size:11px;color:var(--mute);margin:4px 0">${stText}</div>
-    </div>`;
-  });
-  html += `</div>
-    <p style="text-align:center;font-size:13px;color:var(--mute);margin-top:12px">উপরের যেকোনো ওয়াক্তে ট্যাপ করে চিহ্নিত করুন।</p>
-  </div>`;
-
-  $('#app').innerHTML = html;
-  $('#to-tracker').onclick = () => setView('tracker');
 }
 
 /* ---------- Stats / State View ---------- */
@@ -478,6 +475,7 @@ function renderStats(){
     return bn(Math.round((val / maxPossible) * 100)) + '%';
   };
 
+  /* ক্যালেন্ডার গ্রিড জেনারেটর (মাস পরিবর্তনের বাটনসহ) */
   let yearNum = mcur.getFullYear();
   let monthNum = mcur.getMonth();
   let firstDayIndex = new Date(yearNum, monthNum, 1).getDay();
@@ -520,6 +518,7 @@ function renderStats(){
 
   html+=`<div class="card"><h3>📅 ক্যালেন্ডার (তারিখে ক্লিক করে আমল দেখুন)</h3>${calHtml}</div>`;
 
+  // ১. সামগ্রিক সালাত
   html+=`<div class="card" style="border:2px solid var(--pri)">
     <h3>🕌 সামগ্রিক ৫ ওয়াক্ত সালাতের সারসংক্ষেপ</h3>
     <div class="stat-box">
@@ -574,13 +573,13 @@ function renderStats(){
       let dtStr = el.dataset.date;
       let parts = dtStr.split('-').map(Number);
       cur = new Date(parts[0], parts[1]-1, parts[2]);
-      setView('tracker');
+      setView('today');
     };
   });
 }
 
-/* ---------- Tracker View ---------- */
-function renderTracker(){
+/* ---------- Today View ---------- */
+function renderToday(){
   const k=dkey(cur),d=day(k),h=hijri(cur);
   const isToday=k===dkey(new Date());
   
@@ -622,7 +621,7 @@ function renderTracker(){
   CATEGORIES.forEach(cat => {
     html+=`<div class="section-title">${cat.title}</div>`;
     cat.items.forEach(([id, label, desc, type, numKey, targetNum]) => {
-      let hasRead = LEARN_DETAILS[id] !== undefined;
+      let hasRead = PRAYER_DETAILS[id] !== undefined;
       if(type === 'NUM' && numKey) {
         let val = d.counts && d.counts[numKey] !== undefined ? d.counts[numKey] : 0;
         let isComplete = val >= targetNum;
@@ -664,12 +663,14 @@ function renderTracker(){
   if($('#tod'))$('#tod').onclick=()=>{cur=new Date();render()};
 
   $('#pray-link').onclick = () => {
-    showLearnModal('am_dhikr');
+    showModal('নামাজের সময়সূচি (হানাফি ও করাচি বিশ্ববিদ্যালয়)', `<p>অনলাইন হানাফি নামাজের সময় ও নিষিদ্ধ সময় দেখার জন্য নিচের লিঙ্কে ক্লিক করুন:</p><a href="https://www.google.com/search?q=prayer+times+karachi+university+hanafi" target="_blank" class="btn" style="display:inline-block;margin-top:8px;text-decoration:none">গুগলে সময়সূচি দেখুন</a>`);
   };
 
   document.querySelectorAll('.read-btn[data-read]').forEach(btn => {
     btn.onclick = () => {
-      showLearnModal(btn.dataset.read);
+      let key = btn.dataset.read;
+      let detail = PRAYER_DETAILS[key];
+      if(detail) showModal(detail.title, detail.content);
     };
   });
   
@@ -716,28 +717,24 @@ function renderTracker(){
   prog();
 }
 
-/* ---------- Learn View ---------- */
-function renderLearn(){
-  let html=`<div class="card"><h3>📖 শিখুন (আমল ও শিক্ষার ভাণ্ডার)</h3><p class="mute">বিষয়ভিত্তিক ধাপে ধাপে শিক্ষা, আরবি, উচ্চারণ ও অনুবাদ:</p></div>`;
+/* ---------- Guide View (গাইড ট্যাব ও গুরুত্বপূর্ণ দোয়া/তাসবিহ) ---------- */
+function renderGuide(){
+  let html=`<div class="card"><h3>📖 গাইড ও গুরুত্বপূর্ণ দোয়া সমূহ</h3><p class="mute">ক্যাটাগরি অনুযায়ী জরুরি মাসনুন দোয়া ও তাসবিহসমূহ:</p></div>`;
   
-  Object.keys(LEARN_DETAILS).forEach(k => {
-    let item = LEARN_DETAILS[k];
-    html+=`<div class="card" style="cursor:pointer" onclick="showLearnModal('${k}')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <b>${item.title}</b>
-        <span class="read-btn">পড়ুন ›</span>
-      </div>
-      <small class="mute">ধাপে ধাপে রেফারেন্স সহ শিক্ষা</small>
-    </div>`;
+  Object.keys(PRAYER_DETAILS).forEach(k => {
+    let item = PRAYER_DETAILS[k];
+    html+=`<details><summary>${item.title}</summary><div class="in">${item.content}</div></details>`;
   });
 
-  html+=`<div class="card ar" style="color:var(--pri);margin-top:16px">رَبَّنَا تَقَبَّلْ مِنَّا ۖ إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ<div class="mute" style="direction:ltr;font-size:14px">হে আমাদের রব, আমাদের পক্ষ থেকে কবুল করুন; নিশ্চয়ই আপনি সর্বশ্রোতা, সর্বজ্ঞ।</div></div>`;
+  html+=`<div class="card ar" style="color:var(--pri)">رَبَّنَا تَقَبَّلْ مِنَّا ۖ إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ<div class="mute" style="direction:ltr;font-size:14px">হে আমাদের রব, আমাদের পক্ষ থেকে কবুল করুন; নিশ্চয়ই আপনি সর্বশ্রোতা, সর্বজ্ঞ।</div></div>`;
   $('#app').innerHTML=html;
 }
 
-/* ---------- Monthly Review & Holidays View ---------- */
+/* ---------- Monthly Review & Holidays View (ছুটির তালিকা ও কাউন্টডাউন) ---------- */
 function renderMonth(){
   const ym=mkey(mcur),M=mon(ym);
+  
+  /* ২০২৬ সালের সরকারি ছুটির তালিকা ও কাউন্টডাউন হিসাব */
   const holidays = [
     { name: 'শবে বরাত*', date: '2026-02-04' },
     { name: 'শহীদ দিবস ও আন্তর্জাতিক মাতৃভাষা দিবস', date: '2026-02-21' },
@@ -874,14 +871,13 @@ function renderMore(){
 }
 
 function render(){
-  if(view==='home')renderHome();
-  else if(view==='tracker')renderTracker();
+  if(view==='today')renderToday();
   else if(view==='stats')renderStats();
-  else if(view==='learn')renderLearn();
+  else if(view==='guide')renderGuide();
   else if(view==='month')renderMonth();
   else renderMore();
 }
-setView('home');
+setView('today');
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}))
