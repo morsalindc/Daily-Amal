@@ -80,7 +80,7 @@ th{background:var(--pri2)}
 <main id="app"></main>
 <nav id="nav">
   <button data-v="home"><span>🏠</span>হোম</button>
-  <button data-v="today"><span>✅</span>ট্র্যাকার</button>
+  <button data-v="tracker"><span>✅</span>ট্র্যাকার</button>
   <button data-v="stats"><span>📊</span>স্টেট</button>
   <button data-v="learn"><span>📖</span>শিখুন</button>
   <button data-v="month"><span>📅</span>ছুটি ও মাস</button>
@@ -99,7 +99,7 @@ th{background:var(--pri2)}
 </div>
 
 <script>
-const VERSION='1.8.0';
+const VERSION='1.8.1';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -310,8 +310,16 @@ function hijri(date){
 let view='home',cur=new Date(),mcur=new Date();
 let statFilter='month', customStart='', customEnd='';
 
-function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
-document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
+function setView(v){
+  view=v;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  render();
+  window.scrollTo(0,0);
+}
+document.getElementById('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(b && b.dataset.v) setView(b.dataset.v);
+});
 
 function getTotalChecklistCount(){ 
   let count = SALAT_LIST.length + SUNNAH_LIST.length;
@@ -343,7 +351,7 @@ function streak(){
   return n;
 }
 
-/* ---------- Home View (পঞ্চম ছবির আদলে ডাইনামিক টাইমটেবিল) ---------- */
+/* ---------- Home View ---------- */
 function renderHome(){
   const today = new Date();
   const h = hijri(today);
@@ -389,7 +397,7 @@ function renderHome(){
   </div>`;
 
   $('#app').innerHTML = html;
-  $('#to-tracker').onclick = () => setView('today');
+  $('#to-tracker').onclick = () => setView('tracker');
 }
 
 /* ---------- Stats / State View ---------- */
@@ -566,13 +574,13 @@ function renderStats(){
       let dtStr = el.dataset.date;
       let parts = dtStr.split('-').map(Number);
       cur = new Date(parts[0], parts[1]-1, parts[2]);
-      setView('today');
+      setView('tracker');
     };
   });
 }
 
-/* ---------- Tracker View (সাবেক আজ ট্যাব) ---------- */
-function renderToday(){
+/* ---------- Tracker View ---------- */
+function renderTracker(){
   const k=dkey(cur),d=day(k),h=hijri(cur);
   const isToday=k===dkey(new Date());
   
@@ -708,7 +716,7 @@ function renderToday(){
   prog();
 }
 
-/* ---------- Learn View (শিখুন ট্যাব - ছবি অনুযায়ী ক্যাটাগরি ও বিস্তারিত শিক্ষা) ---------- */
+/* ---------- Learn View ---------- */
 function renderLearn(){
   let html=`<div class="card"><h3>📖 শিখুন (আমল ও শিক্ষার ভাণ্ডার)</h3><p class="mute">বিষয়ভিত্তিক ধাপে ধাপে শিক্ষা, আরবি, উচ্চারণ ও অনুবাদ:</p></div>`;
   
@@ -867,7 +875,7 @@ function renderMore(){
 
 function render(){
   if(view==='home')renderHome();
-  else if(view==='today')renderToday();
+  else if(view==='tracker')renderTracker();
   else if(view==='stats')renderStats();
   else if(view==='learn')renderLearn();
   else if(view==='month')renderMonth();
