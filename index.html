@@ -30,6 +30,7 @@ nav button.on{color:var(--pri);font-weight:700}
 .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row label{flex:1;cursor:pointer}
+.sub-txt{display:block;font-size:12px;color:var(--mute)}
 input[type=checkbox]{width:22px;height:22px;accent-color:var(--pri);flex:none}
 input[type=text],input[type=number],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
 textarea{min-height:56px;resize:vertical}
@@ -63,7 +64,7 @@ th{background:var(--pri2)}
 .chips{display:flex;gap:14px}
 .chips label{display:flex;align-items:center;gap:6px}
 .auto{background:var(--pri2);color:var(--pri);border-radius:8px;padding:6px 10px;font-weight:700}
-.section-title{font-weight:700;margin:12px 0 4px;color:var(--pri);font-size:15px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+.section-title{font-weight:700;margin:14px 0 6px;color:var(--pri);font-size:15px;border-bottom:2px solid var(--pri2);padding-bottom:4px}
 .stat-box{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .stat-card{background:var(--pri2);border-radius:10px;padding:10px;text-align:center}
 .stat-card b{display:block;font-size:18px;color:var(--pri)}
@@ -82,7 +83,7 @@ th{background:var(--pri2)}
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 <script>
-const VERSION='1.4.0';
+const VERSION='1.5.0';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -109,22 +110,6 @@ function day(k){
   return d;
 }
 
-const OTHER_ITEMS=[
- ['f2','সুন্নত ও নফল সালাত (অন্যান্য) আদায় করেছি'],
- ['f3','তাহাজ্জুদ আদায় করেছি'],
- ['f4','কুরআন তিলাওয়াত করেছি','Q'],
- ['f5','কুরআনের অর্থ বা তাফসির পড়েছি'],
- ['f6','সকাল ও সন্ধ্যার যিকির করেছি'],
- ['f7','ফরজ সালাতের পরের যিকির করেছি'],
- ['f8','ইস্তিগফার ও দরূদ পড়েছি'],
- ['f9','পিতা-মাতা ও পরিবারের সাথে ভালো ব্যবহার করেছি'],
- ['f10','কাজে সততা ও আমানতদারি রক্ষা করেছি'],
- ['f11','হালাল উপার্জন ও ব্যয় করেছি; কিছু দান করেছি'],
- ['f12','মিথ্যা, ঘিবত, রাগ ও অপচয় থেকে বেঁচেছি'],
- ['f13','কাউকে কষ্ট দিয়ে থাকলে ক্ষমা চেয়েছি'],
- ['f14','ঘুমের আগে ওযু, দোয়া ও তাওবা করেছি']
-];
-
 const SALAT_LIST=[['fajr', 'ফজর'],['zuhr', 'যোহর'],['asr', 'আসর'],['maghrib', 'মাগরিব'],['isha', 'ইশা']];
 const SALAT_STATUSES=[
   ['', '-- স্ট্যাটাস নেই --'],
@@ -141,6 +126,85 @@ const SUNNAH_LIST=[
   ['maghrib_after', 'মাগরিবের পরের ২ রাকাত সুন্নত'],
   ['isha_after', 'ইশার পরের ২ রাকাত সুন্নত'],
   ['witr', 'বিতর ওয়াজিব সালাত']
+];
+
+/* নতুন ক্যাটাগরিভিত্তিক আমলসমূহ */
+const CATEGORIES = [
+  {
+    title: '🕌 নফল নামাজ',
+    items: [
+      ['nafl_ishraq', 'ইশরাক', 'সূর্যোদয়ের ১৫-২০ মিনিট পর'],
+      ['nafl_chasht', 'চাশত', 'পূর্বাহ্নে, দুপুরের আগে'],
+      ['nafl_jawal', 'জাওয়াল', 'সূর্য হেলে পড়ার পর, যোহরের আগে'],
+      ['nafl_awwabin', 'আওয়াবিন', 'মাগরিবের পর'],
+      ['nafl_tahajjud', 'তাহাজ্জুদ', 'রাতের শেষ ভাগে'],
+      ['nafl_wudu', 'তাহিয়্যাতুল ওজু', 'ওজুর পর ২ রাকাত'],
+      ['nafl_mosque', 'তাহিয়্যাতুল মসজিদ', 'মসজিদে প্রবেশ করে ২ রাকাত']
+    ]
+  },
+  {
+    title: '📿 সকাল-সন্ধ্যার আমল',
+    items: [
+      ['am_dhikr', 'সকাল বেলার আমল', 'ফজরের পর থেকে সূর্যোদয়ের মধ্যে'],
+      ['pm_dhikr', 'সন্ধ্যা বেলার আমল', 'আসরের পর থেকে মাগরিবের মধ্যে'],
+      ['post_salat_dhikr', 'পাঁচ ওয়াক্ত নামাজের পরের আমল', 'ফরজ সালাতের জিকির'],
+      ['quran_recite', 'কুরআন তিলাওয়াত', 'নিয়মিত পাঠ', 'Q'],
+      ['quran_memo', 'কুরআন মুখস্থ', 'নতুন মুখস্থ বা রিভিশন'],
+      ['istighfar', 'ইস্তেগফার', 'কমপক্ষে ১০০ বার'],
+      ['durud', 'দরুদ শরিফ', 'কমপক্ষে ১০০ বার'],
+      ['asmul_husna', 'আসমাউল হুসনা', 'আল্লাহর ৯৯টি সুন্দর নাম']
+    ]
+  },
+  {
+    title: '🛏️ ঘুমের আগের আমল',
+    items: [
+      ['sleep_wudu', 'ওজুসহ ঘুমানো', 'পবিত্র অবস্থায় ঘুমানো'],
+      ['sleep_dua', 'ঘুমের দু\u2019আ পড়া', 'মাসনুন দোয়া'],
+      ['sleep_surahs', 'সূরা ইখলাস, ফালাক ও নাস', 'পড়ে হাতে ফুঁ দিয়ে শরীরে বুলানো'],
+      ['sleep_baqarah', 'সূরা বাকারার শেষ দুই আয়াত', 'রাতের সুরক্ষার জন্য'],
+      ['sleep_kursi', 'আয়াতুল কুরসি', 'ঘুমানোর আগে পাঠ']
+    ]
+  },
+  {
+    title: '🤝 করণীয় (সমাজ ও ব্যবহার)',
+    items: [
+      ['do_parents', 'বাবা-মার খোঁজখবর', 'সেবা ও সুন্দর আচরণ'],
+      ['do_wife', 'স্ত্রীর হক আদায়', 'পরিবারে সময় দেওয়া'],
+      ['do_relatives', 'আত্মীয়দের খোঁজখবর', 'সিলায়ে রেহমি'],
+      ['do_talim', 'ঘরোয়া তালিম', 'পরিবারকে নিয়ে দ্বীনি আলোচনা'],
+      ['do_help', 'কারো উপকার করা', 'সামর্থ্য অনুযায়ী সাহায্য'],
+      ['do_sadaqah', 'সাদাকা করা', 'দান-সাদাকা'],
+      ['do_salam', 'সালামের প্রসার', 'পরিচিত-অপরিচিতকে সালাম'],
+      ['do_miswak', 'মেসওয়াক করা', 'সুন্নত মেসওয়াক']
+    ]
+  },
+  {
+    title: '🛡️ বর্জনীয় (গুনাহ থেকে বেঁচে থাকা)',
+    items: [
+      ['dont_haram_food', 'হারাম খাদ্য', 'রক্ষা পাওয়া'],
+      ['dont_arrogance', 'অহংকার', 'বিনয়ী থাকা'],
+      ['dont_mobile_sin', 'মোবাইলের গুনাহ', 'দৃষ্টি ও কান রক্ষা'],
+      ['dont_deceit', 'প্রতারণা ও ধোঁকাবাজি', 'সততা বজায় রাখা'],
+      ['dont_waste', 'অপচয়', 'গ্যাস, পানি, বিদ্যুৎ ইত্যাদি'],
+      ['dont_abuse', 'গালি ও মুখ খারাপ', 'জিহ্বা হেফাজত'],
+      ['dont_lies', 'মিথ্যা কথা', 'সত্যবাদিতা'],
+      ['dont_backbite', 'গীবত ও চোগলখুরি', 'পরচর্চা ত্যাগ'],
+      ['dont_haram_income', 'হারাম উপার্জন', 'হালাল রুজি'],
+      ['dont_eye_sin', 'চোখের জিনা', 'দৃষ্টি অবনত রাখা']
+    ]
+  },
+  {
+    title: '💎 দায়েমি সুন্নাহ',
+    items: [
+      ['sunnah_cap', 'মাথায় টুপি রাখা', 'গোপন ও প্রকাশ্য'],
+      ['sunnah_hair', 'সুন্নত তরিকায় চুল কাটা', 'ইসলামি হেয়ারস্টাইল'],
+      ['sunnah_moustache', 'মোচ খাটো করা', 'নিয়মিত খাটো রাখা'],
+      ['sunnah_beard', 'দাড়ি লম্বা রাখা', 'এক পরিমাপ দাড়ি'],
+      ['sunnah_dress', 'সুন্নতি পোশাক পরা', 'নম্র পোশাক'],
+      ['sunnah_nails', 'নখ মোচ কাটা', 'পরিষ্কার-পরিচ্ছন্নতা'],
+      ['sunnah_clean', 'গুপ্তস্থানের লোম পরিষ্কার', 'পবিত্রতা অর্জন']
+    ]
+  }
 ];
 
 function hijri(date){
@@ -189,14 +253,22 @@ let statFilter='month', customStart='', customEnd='';
 function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 
-function getTotalChecklistCount(){ return SALAT_LIST.length + SUNNAH_LIST.length + OTHER_ITEMS.length; }
+function getTotalChecklistCount(){ 
+  let count = SALAT_LIST.length + SUNNAH_LIST.length;
+  CATEGORIES.forEach(cat => count += cat.items.length);
+  return count;
+}
+
 function getCompletedCount(d){
   let count = 0;
   SALAT_LIST.forEach(([id])=>{ if(d.salats[id] && d.salats[id] !== 'miss') count++; });
   SUNNAH_LIST.forEach(([id])=>{ if(d.sunnah[id]) count++; });
-  OTHER_ITEMS.forEach(([id])=>{ if(d.c[id]) count++; });
+  CATEGORIES.forEach(cat => {
+    cat.items.forEach(([id]) => { if(d.c[id]) count++; });
+  });
   return count;
 }
+
 function pct(k){ const d=S.days[k]; if(!d)return 0; return getCompletedCount(d)/getTotalChecklistCount(); }
 function streak(){
   let n=0,d=new Date();
@@ -210,7 +282,7 @@ function renderStats(){
   const ym=mkey(mcur);
   let today = new Date();
   let firstDayOfWeek = new Date(today);
-  firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Sunday as start of week
+  firstDayOfWeek.setDate(today.getDate() - today.getDay());
 
   let daysKeys = Object.keys(S.days).filter(k=>{
     if(statFilter==='month') return k.slice(0,7)===ym;
@@ -228,7 +300,6 @@ function renderStats(){
 
   let totalDays = daysKeys.length;
 
-  // সালাত হিসাব
   let salatStats = {
     jamaat: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
     alone_on_time: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
@@ -236,17 +307,15 @@ function renderStats(){
     qada: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
     miss: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0}
   };
-
-  // সামগ্রিক সালাত হিসাব (সব ওয়াক্ত মিলে)
   let totalSalatActions = { jamaat: 0, alone_on_time: 0, alone_late: 0, qada: 0, miss: 0 };
 
-  // সুন্নতের হিসাব
   let sunnahStats = {};
   SUNNAH_LIST.forEach(([id])=> sunnahStats[id]=0);
 
-  // অন্যান্য আমলের হিসাব
-  let otherStats = {};
-  OTHER_ITEMS.forEach(([id])=> otherStats[id]=0);
+  let categoryStats = {};
+  CATEGORIES.forEach(cat => {
+    cat.items.forEach(([id]) => categoryStats[id]=0);
+  });
 
   daysKeys.forEach(k=>{
     const d=S.days[k];
@@ -266,14 +335,15 @@ function renderStats(){
         });
       }
       if(d.c){
-        OTHER_ITEMS.forEach(([id])=>{
-          if(d.c[id]) otherStats[id]++;
+        CATEGORIES.forEach(cat => {
+          cat.items.forEach(([id]) => {
+            if(d.c[id]) categoryStats[id]++;
+          });
         });
       }
     }
   });
 
-  // পার্সেন্টেজ হিসাব করার হেল্পার
   const calcPct = (val) => {
     if(totalDays === 0) return '০%';
     return bn(Math.round((val / totalDays) * 100)) + '%';
@@ -304,7 +374,7 @@ function renderStats(){
     <div class="mute" style="margin-top:6px">মোট রেকর্ডকৃত দিন: ${bn(totalDays)} দিন</div>
   </div>`;
 
-  // ১. সামগ্রিক সব ওয়াক্তের নামাজ মিলিয়ে পার্ট
+  // ১. সামগ্রিক সালাত
   html+=`<div class="card" style="border:2px solid var(--pri)">
     <h3>🕌 সামগ্রিক ৫ ওয়াক্ত সালাতের সারসংক্ষেপ</h3>
     <div class="stat-box">
@@ -330,7 +400,7 @@ function renderStats(){
     </div>`;
   });
 
-  // ৩. সুন্নতে মুয়াক্কাদা ও বিতর স্টেট
+  // ৩. সুন্নতে মুয়াক্কাদা ও বিতর
   html+=`<div class="card">
     <h3>☀️ সুন্নতে মুয়াক্কাদা ও বিতর পরিসংখ্যান</h3>`;
   SUNNAH_LIST.forEach(([id, name])=>{
@@ -339,22 +409,19 @@ function renderStats(){
   });
   html+=`</div>`;
 
-  // ৪. অন্যান্য আমলগুলোর স্টেট
-  html+=`<div class="card">
-    <h3>✨ অন্যান্য দৈনিক আমলসমূহ পরিসংখ্যান</h3>`;
-  OTHER_ITEMS.forEach(([id, name])=>{
-    let count = otherStats[id];
-    html+=`<div class="row"><label>${name}</label><b>${bn(count)} দিন</b> <span class="mute">(${calcPct(count)})</span></div>`;
+  // ৪. নতুন ক্যাটাগরিভিত্তিক পরিসংখ্যান
+  CATEGORIES.forEach(cat => {
+    html+=`<div class="card"><h3>${cat.title} পরিসংখ্যান</h3>`;
+    cat.items.forEach(([id, name])=>{
+      let count = categoryStats[id];
+      html+=`<div class="row"><label>${name}</label><b>${bn(count)} দিন</b> <span class="mute">(${calcPct(count)})</span></div>`;
+    });
+    html+=`</div>`;
   });
-  html+=`</div>`;
 
   $('#app').innerHTML=html;
 
-  $('#stat-filter').onchange=e=>{ 
-    statFilter=e.target.value; 
-    renderStats(); 
-  };
-
+  $('#stat-filter').onchange=e=>{ statFilter=e.target.value; renderStats(); };
   if($('#c-start')) $('#c-start').onchange=e=>{ customStart=e.target.value; renderStats(); };
   if($('#c-end')) $('#c-end').onchange=e=>{ customEnd=e.target.value; renderStats(); };
 }
@@ -375,6 +442,7 @@ function renderToday(){
   
   html+=`<div class="card"><div class="mute" id="pt"></div><div class="bar"><i id="pb"></i></div><div class="mute" id="st"></div>`;
   
+  // ১. পাঁচ ওয়াক্ত সালাত
   html+=`<div class="section-title">🕌 পাঁচ ওয়াক্ত ফরজ সালাত</div>`;
   SALAT_LIST.forEach(([id, label])=>{
     html+=`<div class="row"><label>${label} সালাত</label><select class="sm salat-sel" data-salat="${id}">`;
@@ -385,17 +453,21 @@ function renderToday(){
     html+=`</select></div>`;
   });
 
+  // ২. সুন্নতে মুয়াক্কাদা
   html+=`<div class="section-title">☀️ সুন্নতে মুয়াক্কাদা ও ওয়াজিব</div>`;
   SUNNAH_LIST.forEach(([id, label])=>{
     let checked = d.sunnah[id] ? ' checked' : '';
     html+=`<div class="row"><input type="checkbox" id="sun_${id}" data-sun="${id}"${checked}><label for="sun_${id}">${label}</label></div>`;
   });
 
-  html+=`<div class="section-title">✨ অন্যান্য দৈনিক আমল</div>`;
-  OTHER_ITEMS.forEach(([id,label,x])=>{
-    let checked = d.c[id] ? ' checked' : '';
-    html+=`<div class="row"><input type="checkbox" id="${id}" data-c="${id}"${checked}><label for="${id}">${label}</label></div>`;
-    if(x==='Q') html+=`<div class="row" style="padding-top:0"><input type="text" id="qa" placeholder="পরিমাণ (যেমন: ২ পৃষ্ঠা / ১ রুকু / ১ পারা)" value="${esc(d.quran)}"></div>`;
+  // ৩. নতুন সাজানো ক্যাটাগরি ও আমল
+  CATEGORIES.forEach(cat => {
+    html+=`<div class="section-title">${cat.title}</div>`;
+    cat.items.forEach(([id, label, desc, x]) => {
+      let checked = d.c[id] ? ' checked' : '';
+      html+=`<div class="row"><input type="checkbox" id="${id}" data-c="${id}"${checked}><label for="${id}">${label}<span class="sub-txt">${desc}</span></label></div>`;
+      if(x==='Q') html+=`<div class="row" style="padding-top:0"><input type="text" id="qa" placeholder="পরিমাণ (যেমন: ২ পৃষ্ঠা / ১ রুকু / ১ পারা)" value="${esc(d.quran)}"></div>`;
+    });
   });
 
   html+=`</div><div class="card"><h3>আজকের ভাবনা</h3>
@@ -460,13 +532,13 @@ function renderGuide(){
 /* ---------- Monthly Review View ---------- */
 const MROWS=[
  ['jamaat','৫ ওয়াক্ত সালাত জামাতে আদায় (দিন সংখ্যা)','M_SALAT','৫ ওয়াক্তই জামাতে'],
- ['tahajjud','তাহাজ্জুদ (রাত সংখ্যা)','A:f3'],
+ ['tahajjud','তাহাজ্জুদ (রাত সংখ্যা)','A:nafl_tahajjud'],
  ['quran','কুরআন তিলাওয়াত (পারা/পৃষ্ঠা) ও খতম','M'],
- ['zikr','সকাল-সন্ধ্যার যিকির (দিন সংখ্যা)','A:f6'],
+ ['zikr','সকাল-সন্ধ্যার যিকির (দিন সংখ্যা)','A:am_dhikr'],
  ['sadaqa','সাদাকা/দান (পরিমাণ বা সংখ্যা)','M'],
- ['family','পরিবার ও আত্মীয়দের সাথে সম্পর্ক','A:f9'],
- ['honesty','কর্মক্ষেত্রে সততা ও আমানতদারি','A:f10'],
- ['halal','হালাল-হারামের সতর্কতা','A:f11']
+ ['family','পরিবার ও আত্মীয়দের সাথে সম্পর্ক','A:do_parents'],
+ ['honesty','কর্মক্ষেত্রে সততা ও আমানতদারি','A:do_help'],
+ ['halal','হালাল-হারামের সতর্কতা','A:dont_haram_income']
 ];
 
 function mon(k){return S.months[k]||(S.months[k]={m:{},g:{},b:[false,false,false],a:'',b2:'',p1:'',p2:'',p3:''})}
