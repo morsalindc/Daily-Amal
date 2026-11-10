@@ -76,7 +76,7 @@ th{background:var(--pri2)}
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 <script>
-const VERSION='1.1.1';
+const VERSION='1.2.2';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -358,7 +358,12 @@ function renderMore(){
      isIOS?'<p>iPhone/iPad: Safari-তে নিচের Share বাটন চেপে "Add to Home Screen" দিন।</p>':
      '<p>Chrome মেনু (⋮) থেকে "Install app" বা "Add to Home screen" দিন।</p>'}</div>
   <div class="card"><h3>হিজরি তারিখ সমন্বয়</h3>
-   <select id="off"><option value="-1"${off===-1?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option><option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option><option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option><option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option><option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option><option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option><option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ২ দিন পরে</option></select></div>
+   <select id="off">
+     <option value="-1"${off===-1?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option>
+     <option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option>
+     <option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option>
+     <option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ২ দিন পরে</option>
+   </select></div>
   <div class="card"><h3>ব্যাকআপ</h3>
    <button class="btn" id="exp">ব্যাকআপ ডাউনলোড</button>
    <button class="btn alt" id="imp">ব্যাকআপ থেকে ফিরিয়ে আনুন</button>
