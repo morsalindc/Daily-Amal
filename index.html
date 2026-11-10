@@ -31,7 +31,7 @@ nav button.on{color:var(--pri);font-weight:700}
 .row:last-child{border-bottom:0}
 .row label{flex:1;cursor:pointer}
 input[type=checkbox]{width:22px;height:22px;accent-color:var(--pri);flex:none}
-input[type=text],input[type=number],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+input[type=text],input[type=number],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
 textarea{min-height:56px;resize:vertical}
 .sm{width:130px;flex:none;font-size:13px;padding:6px}
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -67,6 +67,8 @@ th{background:var(--pri2)}
 .stat-box{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .stat-card{background:var(--pri2);border-radius:10px;padding:10px;text-align:center}
 .stat-card b{display:block;font-size:18px;color:var(--pri)}
+.stat-card small{display:block;font-size:11px}
+.stat-card span{font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -80,7 +82,7 @@ th{background:var(--pri2)}
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 <script>
-const VERSION='1.3.0';
+const VERSION='1.4.0';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
 const $=s=>document.querySelector(s);
@@ -118,7 +120,7 @@ const OTHER_ITEMS=[
  ['f9','পিতা-মাতা ও পরিবারের সাথে ভালো ব্যবহার করেছি'],
  ['f10','কাজে সততা ও আমানতদারি রক্ষা করেছি'],
  ['f11','হালাল উপার্জন ও ব্যয় করেছি; কিছু দান করেছি'],
- ['f12','মিথ্যা, গিবত, রাগ ও অপচয় থেকে বেঁচেছি'],
+ ['f12','মিথ্যা, ঘিবত, রাগ ও অপচয় থেকে বেঁচেছি'],
  ['f13','কাউকে কষ্ট দিয়ে থাকলে ক্ষমা চেয়েছি'],
  ['f14','ঘুমের আগে ওযু, দোয়া ও তাওবা করেছি']
 ];
@@ -132,7 +134,14 @@ const SALAT_STATUSES=[
   ['qada', 'কাজা আদায়'],
   ['miss', 'মিস / ছুটেছে']
 ];
-const SUNNAH_LIST=[['fajr_sunnah', 'ফজরের ২ রাকাত সুন্নত'],['zuhr_before', 'যোহরের আগের ৪ রাকাত সুন্নত'],['zuhr_after', 'যোহরের পরের ২ রাকাত সুন্নত'],['maghrib_after', 'মাগরিবের পরের ২ রাকাত সুন্নত'],['isha_after', 'ইশার পরের ২ রাকাত সুন্নত'],['witr', 'বিতর ওয়াজিব সালাত']];
+const SUNNAH_LIST=[
+  ['fajr_sunnah', 'ফজরের ২ রাকাত সুন্নত'],
+  ['zuhr_before', 'যোহরের আগের ৪ রাকাত সুন্নত'],
+  ['zuhr_after', 'যোহরের পরের ২ রাকাত সুন্নত'],
+  ['maghrib_after', 'মাগরিবের পরের ২ রাকাত সুন্নত'],
+  ['isha_after', 'ইশার পরের ২ রাকাত সুন্নত'],
+  ['witr', 'বিতর ওয়াজিব সালাত']
+];
 
 function hijri(date){
   try{
@@ -174,7 +183,9 @@ function specials(date){
   return out;
 }
 
-let view='today',cur=new Date(),mcur=new Date(), statFilter='month';
+let view='today',cur=new Date(),mcur=new Date();
+let statFilter='month', customStart='', customEnd='';
+
 function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 
@@ -197,57 +208,155 @@ function streak(){
 /* ---------- Stats / State View ---------- */
 function renderStats(){
   const ym=mkey(mcur);
+  let today = new Date();
+  let firstDayOfWeek = new Date(today);
+  firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Sunday as start of week
+
   let daysKeys = Object.keys(S.days).filter(k=>{
     if(statFilter==='month') return k.slice(0,7)===ym;
-    return true; // all time
+    if(statFilter==='week') {
+      let dParts = k.split('-').map(Number);
+      let dObj = new Date(dParts[0], dParts[1]-1, dParts[2]);
+      return dObj >= firstDayOfWeek && dObj <= today;
+    }
+    if(statFilter==='custom' && customStart && customEnd) {
+      return k >= customStart && k <= customEnd;
+    }
+    if(statFilter==='all') return true;
+    return true;
   });
 
-  // হিসাব নিকাশ
-  let stats = {
+  let totalDays = daysKeys.length;
+
+  // সালাত হিসাব
+  let salatStats = {
     jamaat: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
     alone_on_time: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
     alone_late: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
     qada: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
-    miss: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0},
-    totalDays: daysKeys.length
+    miss: {fajr:0, zuhr:0, asr:0, maghrib:0, isha:0}
   };
+
+  // সামগ্রিক সালাত হিসাব (সব ওয়াক্ত মিলে)
+  let totalSalatActions = { jamaat: 0, alone_on_time: 0, alone_late: 0, qada: 0, miss: 0 };
+
+  // সুন্নতের হিসাব
+  let sunnahStats = {};
+  SUNNAH_LIST.forEach(([id])=> sunnahStats[id]=0);
+
+  // অন্যান্য আমলের হিসাব
+  let otherStats = {};
+  OTHER_ITEMS.forEach(([id])=> otherStats[id]=0);
 
   daysKeys.forEach(k=>{
     const d=S.days[k];
-    if(d && d.salats){
-      SALAT_LIST.forEach(([id])=>{
-        let st=d.salats[id];
-        if(st && stats[st]) stats[st][id]++;
-      });
+    if(d){
+      if(d.salats){
+        SALAT_LIST.forEach(([id])=>{
+          let st=d.salats[id];
+          if(st && salatStats[st]){
+            salatStats[st][id]++;
+            totalSalatActions[st]++;
+          }
+        });
+      }
+      if(d.sunnah){
+        SUNNAH_LIST.forEach(([id])=>{
+          if(d.sunnah[id]) sunnahStats[id]++;
+        });
+      }
+      if(d.c){
+        OTHER_ITEMS.forEach(([id])=>{
+          if(d.c[id]) otherStats[id]++;
+        });
+      }
     }
   });
 
+  // পার্সেন্টেজ হিসাব করার হেল্পার
+  const calcPct = (val) => {
+    if(totalDays === 0) return '০%';
+    return bn(Math.round((val / totalDays) * 100)) + '%';
+  };
+
+  const calcTotalSalatPct = (val) => {
+    let maxPossible = totalDays * 5;
+    if(maxPossible === 0) return '০%';
+    return bn(Math.round((val / maxPossible) * 100)) + '%';
+  };
+
   let html=`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <h3>🕌 সালাত ট্র্যাকিং স্টেট (পরিসংখ্যান)</h3>
-      <select id="stat-filter" class="sm" style="width:110px">
+      <h3>📊 আমল ট্র্যাকিং স্টেট ও পরিসংখ্যান</h3>
+      <select id="stat-filter" class="sm" style="width:125px">
         <option value="month"${statFilter==='month'?' selected':''}>চলতি মাস</option>
+        <option value="week"${statFilter==='week'?' selected':''}>চলতি সপ্তাহ</option>
+        <option value="custom"${statFilter==='custom'?' selected':''}>নির্দিষ্ট ডেট</option>
         <option value="all"${statFilter==='all'?' selected':''}>সব সময়</option>
       </select>
     </div>
-    <div class="mute">মোট পঠিত দিনসমূহ: ${bn(stats.totalDays)} দিন</div>
+    ${statFilter==='custom'?`
+      <div class="two" style="margin-top:8px">
+        <div><small class="mute">শুরু:</small><input type="date" id="c-start" value="${customStart}"></div>
+        <div><small class="mute">শেষ:</small><input type="date" id="c-end" value="${customEnd}"></div>
+      </div>
+    `:''}
+    <div class="mute" style="margin-top:6px">মোট রেকর্ডকৃত দিন: ${bn(totalDays)} দিন</div>
   </div>`;
 
+  // ১. সামগ্রিক সব ওয়াক্তের নামাজ মিলিয়ে পার্ট
+  html+=`<div class="card" style="border:2px solid var(--pri)">
+    <h3>🕌 সামগ্রিক ৫ ওয়াক্ত সালাতের সারসংক্ষেপ</h3>
+    <div class="stat-box">
+      <div class="stat-card"><small>জামাতে মোট</small><b>${bn(totalSalatActions.jamaat)} বার</b><span>(${calcTotalSalatPct(totalSalatActions.jamaat)})</span></div>
+      <div class="stat-card"><small>একা (সময়মতো)</small><b>${bn(totalSalatActions.alone_on_time)} বার</b><span>(${calcTotalSalatPct(totalSalatActions.alone_on_time)})</span></div>
+      <div class="stat-card"><small>একা (দেরিতে)</small><b>${bn(totalSalatActions.alone_late)} বার</b><span>(${calcTotalSalatPct(totalSalatActions.alone_late)})</span></div>
+      <div class="stat-card"><small>কাজা আদায়</small><b>${bn(totalSalatActions.qada)} বার</b><span>(${calcTotalSalatPct(totalSalatActions.qada)})</span></div>
+    </div>
+    <div class="mute" style="margin-top:6px">মিস / ছুটেছে সর্বমোট: <b style="color:#d9534f">${bn(totalSalatActions.miss)} বার</b> (${calcTotalSalatPct(totalSalatActions.miss)})</div>
+  </div>`;
+
+  // ২. আলাদা আলাদা নামাজের স্টেট
   SALAT_LIST.forEach(([id, name])=>{
     html+=`<div class="card">
       <h3>${name} সালাতের বিবরণ</h3>
       <div class="stat-box">
-        <div class="stat-card"><small>জামাতে</small><b>${bn(stats.jamaat[id])}</b></div>
-        <div class="stat-card"><small>একা (সময়মতো)</small><b>${bn(stats.alone_on_time[id])}</b></div>
-        <div class="stat-card"><small>একা (দেরিতে)</small><b>${bn(stats.alone_late[id])}</b></div>
-        <div class="stat-card"><small>কাজা</small><b>${bn(stats.qada[id])}</b></div>
+        <div class="stat-card"><small>জামাতে</small><b>${bn(salatStats.jamaat[id])}</b><span>(${calcPct(salatStats.jamaat[id])})</span></div>
+        <div class="stat-card"><small>একা (সময়মতো)</small><b>${bn(salatStats.alone_on_time[id])}</b><span>(${calcPct(salatStats.alone_on_time[id])})</span></div>
+        <div class="stat-card"><small>একা (দেরিতে)</small><b>${bn(salatStats.alone_late[id])}</b><span>(${calcPct(salatStats.alone_late[id])})</span></div>
+        <div class="stat-card"><small>কাজা</small><b>${bn(salatStats.qada[id])}</b><span>(${calcPct(salatStats.qada[id])})</span></div>
       </div>
-      <div class="mute" style="margin-top:6px">মিস / ছুটেছে: <b style="color:#d9534f">${bn(stats.miss[id])}</b> বার</div>
+      <div class="mute" style="margin-top:6px">মিস / ছুটেছে: <b style="color:#d9534f">${bn(salatStats.miss[id])} বার</b> (${calcPct(salatStats.miss[id])})</div>
     </div>`;
   });
 
+  // ৩. সুন্নতে মুয়াক্কাদা ও বিতর স্টেট
+  html+=`<div class="card">
+    <h3>☀️ সুন্নতে মুয়াক্কাদা ও বিতর পরিসংখ্যান</h3>`;
+  SUNNAH_LIST.forEach(([id, name])=>{
+    let count = sunnahStats[id];
+    html+=`<div class="row"><label>${name}</label><b>${bn(count)} দিন</b> <span class="mute">(${calcPct(count)})</span></div>`;
+  });
+  html+=`</div>`;
+
+  // ৪. অন্যান্য আমলগুলোর স্টেট
+  html+=`<div class="card">
+    <h3>✨ অন্যান্য দৈনিক আমলসমূহ পরিসংখ্যান</h3>`;
+  OTHER_ITEMS.forEach(([id, name])=>{
+    let count = otherStats[id];
+    html+=`<div class="row"><label>${name}</label><b>${bn(count)} দিন</b> <span class="mute">(${calcPct(count)})</span></div>`;
+  });
+  html+=`</div>`;
+
   $('#app').innerHTML=html;
-  $('#stat-filter').onchange=e=>{ statFilter=e.target.value; renderStats(); };
+
+  $('#stat-filter').onchange=e=>{ 
+    statFilter=e.target.value; 
+    renderStats(); 
+  };
+
+  if($('#c-start')) $('#c-start').onchange=e=>{ customStart=e.target.value; renderStats(); };
+  if($('#c-end')) $('#c-end').onchange=e=>{ customEnd=e.target.value; renderStats(); };
 }
 
 /* ---------- Today View ---------- */
@@ -452,7 +561,7 @@ function renderMore(){
 
 function render(){
   if(view==='today')renderToday();
-  else if(view=== 'stats')renderStats();
+  else if(view==='stats')renderStats();
   else if(view==='guide')renderGuide();
   else if(view==='month')renderMonth();
   else renderMore();
