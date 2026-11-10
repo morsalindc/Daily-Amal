@@ -1,0 +1,19 @@
+{
+  "name": "আমলের গাইড",
+  "short_name": "আমল",
+  "description": "দৈনিক, সাপ্তাহিক, মাসিক ও বার্ষিক আমলের গাইড ও ট্র্যাকার",
+  "lang": "bn",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f6b4f",
+  "theme_color": "#0f6b4f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
