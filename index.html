@@ -30,10 +30,10 @@ nav button.on{color:var(--pri);font-weight:700}
 .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row label{flex:1;cursor:pointer}
-input[type=checkbox]{width:24px;height:24px;accent-color:var(--pri);flex:none}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--pri);flex:none}
 input[type=text],input[type=number],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
 textarea{min-height:56px;resize:vertical}
-.sm{width:90px;flex:none}
+.sm{width:130px;flex:none;font-size:13px;padding:6px}
 .datebar{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .datebar button,.btn{border:0;background:var(--pri);color:#fff;border-radius:10px;padding:8px 14px;font:inherit;font-size:15px}
 .btn.alt{background:var(--pri2);color:var(--pri)}
@@ -63,6 +63,7 @@ th{background:var(--pri2)}
 .chips{display:flex;gap:14px}
 .chips label{display:flex;align-items:center;gap:6px}
 .auto{background:var(--pri2);color:var(--pri);border-radius:8px;padding:6px 10px;font-weight:700}
+.section-title{font-weight:700;margin:12px 0 4px;color:var(--pri);font-size:15px;border-bottom:1px dashed var(--line);padding-bottom:4px}
 </style>
 </head>
 <body>
@@ -75,10 +76,9 @@ th{background:var(--pri2)}
   <button data-v="more"><span>⚙️</span>আরও</button>
 </nav>
 <script>
-const VERSION='1.0.0';
+const VERSION='1.1.1';
 document.getElementById('ver').textContent='সংস্করণ '+VERSION;
 
-/* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const bn=n=>String(n).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
 const pad=n=>String(n).padStart(2,'0');
@@ -93,14 +93,19 @@ const DEF={days:{},months:{},settings:{offset:-1}};
 function load(){try{const o=JSON.parse(localStorage.getItem('amal.v1')||'{}');return {days:o.days||{},months:o.months||{},settings:Object.assign({offset:-1},o.settings||{})}}catch(e){return JSON.parse(JSON.stringify(DEF))}}
 let S=load();
 function save(){try{localStorage.setItem('amal.v1',JSON.stringify(S))}catch(e){}}
-function day(k){return S.days[k]||(S.days[k]={c:{},jamaat:0,quran:'',n1:'',n2:'',n3:''})}
 
-/* ---------- daily checklist ---------- */
-const ITEMS=[
- ['f1','পাঁচ ওয়াক্ত ফরজ সালাত সময়মতো আদায় করেছি'],
- ['J','জামাতে আদায় করেছি (কয় ওয়াক্ত)'],
- ['f2','সুন্নত ও নফল সালাত আদায় করেছি'],
- ['f3','তাহাজ্জুদ / বিতর আদায় করেছি'],
+function day(k){
+  if(!S.days[k]) S.days[k]={salats:{fajr:'',zuhr:'',asr:'',maghrib:'',isha:''},sunnah:{fajr_sunnah:false,zuhr_before:false,zuhr_after:false,maghrib_after:false,isha_after:false,witr:false},c:{},quran:'',n1:'',n2:'',n3:''};
+  let d = S.days[k];
+  if(!d.salats) d.salats={fajr:'',zuhr:'',asr:'',maghrib:'',isha:''};
+  if(!d.sunnah) d.sunnah={fajr_sunnah:false,zuhr_before:false,zuhr_after:false,maghrib_after:false,isha_after:false,witr:false};
+  if(!d.c) d.c={};
+  return d;
+}
+
+const OTHER_ITEMS=[
+ ['f2','সুন্নত ও নফল সালাত (অন্যান্য) আদায় করেছি'],
+ ['f3','তাহাজ্জুদ আদায় করেছি'],
  ['f4','কুরআন তিলাওয়াত করেছি','Q'],
  ['f5','কুরআনের অর্থ বা তাফসির পড়েছি'],
  ['f6','সকাল ও সন্ধ্যার যিকির করেছি'],
@@ -113,7 +118,10 @@ const ITEMS=[
  ['f13','কাউকে কষ্ট দিয়ে থাকলে ক্ষমা চেয়েছি'],
  ['f14','ঘুমের আগে ওযু, দোয়া ও তাওবা করেছি']
 ];
-const CHECKS=ITEMS.filter(i=>i[0]!=='J').map(i=>i[0]);
+
+const SALAT_LIST=[['fajr', 'ফজর সালাত'],['zuhr', 'যোহর সালাত'],['asr', 'আসর সালাত'],['maghrib', 'মাগরিব সালাত'],['isha', 'ইশা সালাত']];
+const SALAT_STATUSES=[['', '-- স্ট্যাটাস সিলেক্ট করুন --'],['jamaat', 'জামাতে আদায়'],['alone_on_time', 'একা (সময়মতো)'],['alone_late', 'একা (দেরিতে)'],['qada', 'কাজা আদায়'],['miss', 'মিস / ছুটেছে']];
+const SUNNAH_LIST=[['fajr_sunnah', 'ফজরের ২ রাকাত সুন্নত'],['zuhr_before', 'যোহরের আগের ৪ রাকাত সুন্নত'],['zuhr_after', 'যোহরের পরের ২ রাকাত সুন্নত'],['maghrib_after', 'মাগরিবের পরের ২ রাকাত সুন্নত'],['isha_after', 'ইশার পরের ২ রাকাত সুন্নত'],['witr', 'বিতর ওয়াজিব সালাত']];
 
 function hijri(date){
   try{
@@ -124,6 +132,7 @@ function hijri(date){
     return (r.d&&r.m)?r:null;
   }catch(e){return null}
 }
+
 const WEEKLY={
  0:'পরিবারকে নিয়ে দ্বীনি আলোচনা বা একসাথে কুরআন পাঠ; সপ্তাহের পর্যালোচনা।',
  1:'সুন্নত নফল রোজা রাখুন; পরিবারের সবার খোঁজখবর নিন; সপ্তাহের কাজের নিয়ত ঠিক করুন।',
@@ -133,6 +142,7 @@ const WEEKLY={
  5:'জুমার দিন: গোসল, পরিষ্কার পোশাক, আগে মসজিদে যাওয়া, সূরা কাহফ, বেশি দরূদ, আসরের পর দোয়া, সাদাকা।',
  6:'দ্বীনি ইলমের মজলিসে বসুন বা দ্বীনি বই পড়ুন; অসুস্থ বা অসহায়কে দেখতে যান।'
 };
+
 function specials(date){
   const out=[],wd=date.getDay(),h=hijri(date);
   out.push('📌 '+WD[wd]+': '+WEEKLY[wd]);
@@ -157,205 +167,154 @@ let view='today',cur=new Date(),mcur=new Date();
 function setView(v){view=v;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));render();window.scrollTo(0,0)}
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 
-function pct(k){const d=S.days[k];if(!d)return 0;return CHECKS.filter(c=>d.c[c]).length/CHECKS.length}
-function streak(){let n=0,d=new Date();
-  if(pct(dkey(d))<0.5) d.setDate(d.getDate()-1);
-  while(pct(dkey(d))>=0.5){n++;d.setDate(d.getDate()-1);if(n>3650)break}
-  return n}
+function getTotalChecklistCount(){ return SALAT_LIST.length + SUNNAH_LIST.length + OTHER_ITEMS.length; }
+
+function getCompletedCount(d){
+  let count = 0;
+  SALAT_LIST.forEach(([id])=>{ if(d.salats[id] && d.salats[id] !== 'miss') count++; });
+  SUNNAH_LIST.forEach(([id])=>{ if(d.sunnah[id]) count++; });
+  OTHER_ITEMS.forEach(([id])=>{ if(d.c[id]) count++; });
+  return count;
+}
+
+function pct(k){
+  const d=S.days[k];
+  if(!d)return 0;
+  return getCompletedCount(d)/getTotalChecklistCount();
+}
+
+function streak(){
+  let n=0,d=new Date();
+  if(pct(dkey(d))<0.4) d.setDate(d.getDate()-1);
+  while(pct(dkey(d))>=0.4){n++;d.setDate(d.getDate()-1);if(n>3650)break}
+  return n;
+}
 
 function renderToday(){
   const k=dkey(cur),d=day(k),h=hijri(cur);
   const isToday=k===dkey(new Date());
+  
   let html=`<div class="card"><div class="datebar">
    <button id="prev">‹</button>
    <div class="mid"><b>${bn(cur.getDate())} ${GM[cur.getMonth()]} ${bn(cur.getFullYear())}, ${WD[cur.getDay()]}</b>
    <small>${h?bn(h.d)+' '+HM[h.m-1]+' '+bn(h.y)+' হি. (আনুমানিক)':''}</small></div>
    <button id="next">›</button></div>
    ${isToday?'':'<div style="text-align:center;margin-top:8px"><button class="btn alt" id="tod">আজকে ফিরুন</button></div>'}</div>`;
+  
   specials(cur).forEach(t=>html+=`<div class="banner">${esc(t)}</div>`);
+  
   html+=`<div class="card"><div class="mute" id="pt"></div><div class="bar"><i id="pb"></i></div><div class="mute" id="st"></div>`;
-  ITEMS.forEach(([id,label,x])=>{
-    if(id==='J'){
-      html+=`<div class="row"><label for="jm">${label}</label><select id="jm" class="sm">${[0,1,2,3,4,5].map(n=>`<option value="${n}"${d.jamaat===n?' selected':''}>${bn(n)} / ${bn(5)}</option>`).join('')}</select></div>`;
-    }else{
-      html+=`<div class="row"><input type="checkbox" id="${id}" data-c="${id}"${d.c[id]?' checked':''}><label for="${id}">${label}</label></div>`;
-      if(x==='Q') html+=`<div class="row" style="padding-top:0"><input type="text" id="qa" placeholder="পরিমাণ (যেমন: ২ পৃষ্ঠা / ১ রুকু / ১ পারা)" value="${esc(d.quran)}"></div>`;
-    }
+  
+  html+=`<div class="section-title">🕌 পাঁচ ওয়াক্ত ফরজ সালাত</div>`;
+  SALAT_LIST.forEach(([id, label])=>{
+    html+=`<div class="row"><label>${label}</label><select class="sm salat-sel" data-salat="${id}">`;
+    SALAT_STATUSES.forEach(([val, txt])=>{
+      let sel = (d.salats[id] === val) ? ' selected' : '';
+      html+=`<option value="${val}"${sel}>${txt}</option>`;
+    });
+    html+=`</select></div>`;
   });
+
+  html+=`<div class="section-title">☀️ সুন্নতে মুয়াক্কাদা ও ওয়াজিব</div>`;
+  SUNNAH_LIST.forEach(([id, label])=>{
+    let checked = d.sunnah[id] ? ' checked' : '';
+    html+=`<div class="row"><input type="checkbox" id="sun_${id}" data-sun="${id}"${checked}><label for="sun_${id}">${label}</label></div>`;
+  });
+
+  html+=`<div class="section-title">✨ অন্যান্য দৈনিক আমল</div>`;
+  OTHER_ITEMS.forEach(([id,label,x])=>{
+    let checked = d.c[id] ? ' checked' : '';
+    html+=`<div class="row"><input type="checkbox" id="${id}" data-c="${id}"${checked}><label for="${id}">${label}</label></div>`;
+    if(x==='Q') html+=`<div class="row" style="padding-top:0"><input type="text" id="qa" placeholder="পরিমাণ (যেমন: ২ পৃষ্ঠা / ১ রুকু / ১ পারা)" value="${esc(d.quran)}"></div>`;
+  });
+
   html+=`</div><div class="card"><h3>আজকের ভাবনা</h3>
    <div class="mute">আজ যে ভালো কাজ করতে পেরেছি</div><textarea data-n="n1">${esc(d.n1)}</textarea>
    <div class="mute" style="margin-top:8px">যে ভুল বা অবহেলা হয়েছে</div><textarea data-n="n2">${esc(d.n2)}</textarea>
    <div class="mute" style="margin-top:8px">আগামীকাল যে বিষয়ে উন্নতি করব</div><textarea data-n="n3">${esc(d.n3)}</textarea></div>`;
+  
   $('#app').innerHTML=html;
+  
   const shift=n=>{cur.setDate(cur.getDate()+n);render()};
-  $('#prev').onclick=()=>shift(-1);$('#next').onclick=()=>shift(1);
+  $('#prev').onclick=()=>shift(-1);
+  $('#next').onclick=()=>shift(1);
   if($('#tod'))$('#tod').onclick=()=>{cur=new Date();render()};
-  $('#jm').onchange=e=>{d.jamaat=+e.target.value;save()};
-  $('#qa').oninput=e=>{d.quran=e.target.value;save()};
-  document.querySelectorAll('[data-c]').forEach(el=>el.onchange=()=>{d.c[el.dataset.c]=el.checked;save();prog()});
-  document.querySelectorAll('[data-n]').forEach(el=>el.oninput=()=>{d[el.dataset.n]=el.value;save()});
-  function prog(){const n=CHECKS.filter(c=>d.c[c]).length,p=Math.round(n/CHECKS.length*100);
-    $('#pt').textContent='আজকের অগ্রগতি: '+bn(n)+' / '+bn(CHECKS.length)+' ('+bn(p)+'%)';
+  
+  document.querySelectorAll('.salat-sel').forEach(el=>{
+    el.onchange=e=>{ d.salats[el.dataset.salat]=e.target.value; save(); prog(); }
+  });
+
+  document.querySelectorAll('[data-sun]').forEach(el=>{
+    el.onchange=()=>{ d.sunnah[el.dataset.sun]=el.checked; save(); prog(); }
+  });
+
+  if($('#qa')) $('#qa').oninput=e=>{d.quran=e.target.value;save()};
+  
+  document.querySelectorAll('[data-c]').forEach(el=>{
+    el.onchange=()=>{ d.c[el.dataset.c]=el.checked; save(); prog(); }
+  });
+
+  document.querySelectorAll('[data-n]').forEach(el=>{
+    el.oninput=()=>{ d[el.dataset.n]=el.value; save(); }
+  });
+
+  function prog(){
+    const total = getTotalChecklistCount();
+    const done = getCompletedCount(d);
+    const p = Math.round((done/total)*100);
+    $('#pt').textContent='আজকের অগ্রগতি: '+bn(done)+' / '+bn(total)+' ('+bn(p)+'%)';
     $('#pb').style.width=p+'%';
-    const s=streak();$('#st').textContent=s?'🔥 টানা '+bn(s)+' দিন ৫০%+ আমল':'ছোট ধারাবাহিক আমলই আল্লাহর কাছে প্রিয়।'}
+    const s=streak();
+    $('#st').textContent=s?'🔥 টানা '+bn(s)+' দিন ধারাবাহিক আমল':'ছোট ধারাবাহিক আমলই আল্লাহর কাছে প্রিয়।';
+  }
   prog();
 }
 
-/* ---------- guide ---------- */
 const GUIDE=[
-['১. নিত্য পাঁচ ওয়াক্ত সালাত ও জামাত',`
-<p class="mute">নিয়ম: আমলের ক্ষেত্রে ফরজ ও ওয়াজিব সবার আগে, এরপর সুন্নত ও নফল। রাকাতের সংখ্যা সাধারণ প্রচলিত (হানাফি) নিয়মে দেওয়া হয়েছে। যে আমল নিয়মিত করতে পারবেন তা-ই ধরুন; কম হলেও ধারাবাহিক আমলই আল্লাহর কাছে প্রিয় (সহিহ বুখারি ও মুসলিম)। কোনো মাসআলায় সন্দেহ থাকলে নির্ভরযোগ্য আলেমের কাছ থেকে জেনে নিন।</p>
-<table><tr><th>ওয়াক্ত</th><th>সুন্নত (আগে)</th><th>ফরজ</th><th>সুন্নত/নফল (পরে)</th></tr>
-<tr><td>ফজর</td><td>২ (মুয়াক্কাদা)</td><td>২</td><td>—</td></tr>
-<tr><td>যোহর</td><td>৪ (মুয়াক্কাদা)</td><td>৪</td><td>২ সুন্নত + ২ নফল</td></tr>
-<tr><td>আসর</td><td>৪ (গায়রে মুয়াক্কাদা)</td><td>৪</td><td>—</td></tr>
-<tr><td>মাগরিব</td><td>—</td><td>৩</td><td>২ সুন্নত + ২ নফল</td></tr>
-<tr><td>ইশা</td><td>৪ (গায়রে মুয়াক্কাদা)</td><td>৪</td><td>২ সুন্নত + ৩ বিতর (ওয়াজিব) + ২ নফল</td></tr></table>
-<h4>জামাত ও সালাতের আদব</h4><ul>
-<li>আযানের পর যথাসম্ভব মসজিদে গিয়ে প্রথম কাতারে ও তাকবিরে উলার সাথে জামাতে শরিক হওয়ার চেষ্টা করুন। জামাতের সালাতে একাকী সালাতের চেয়ে ২৭ গুণ বেশি সওয়াব (সহিহ বুখারি ও মুসলিম)।</li>
-<li>ওযু করে মসজিদে যাওয়া, আযানের জবাব দেওয়া এবং আযানের পর দরূদ ও আযানের দোয়া পড়া।</li>
-<li>সালাত ধীরস্থিরভাবে, খুশু-খুযুর সাথে আদায় করা; রুকু-সিজদায় তাড়াহুড়া না করা।</li>
-<li>প্রতি ওয়াক্তের সালাত প্রথম বা মুস্তাহাব সময়ে আদায়ের অভ্যাস করা।</li>
-<li>ওযুর পর দুই রাকাত তাহিয়্যাতুল ওযু এবং মসজিদে প্রবেশ করে তাহিয়্যাতুল মসজিদ আদায়।</li>
-<li>চাশতের (ইশরাক/দোহা) নফল সালাত: সূর্য ওঠার প্রায় ১৫–২০ মিনিট পর থেকে ২ থেকে ১২ রাকাত।</li>
-<li>আওয়াবিনের নফল: মাগরিবের পর ৬ রাকাত পর্যন্ত (সামর্থ্য অনুযায়ী)।</li></ul>`],
-['২. তাহাজ্জুদ, যিকির ও দোয়া',`
-<h4>তাহাজ্জুদ</h4><ul>
-<li>ইশার পর ঘুমিয়ে রাতের শেষ ভাগে (বিশেষত শেষ তৃতীয়াংশে) উঠে ২ থেকে ১২ রাকাত তাহাজ্জুদ। রাতের শেষ তৃতীয়াংশে আল্লাহ দুনিয়ার আসমানে নেমে এসে বান্দার দোয়া কবুলের ঘোষণা দেন (সহিহ বুখারি ও মুসলিম)।</li>
-<li>উঠতে কষ্ট হলে অন্তত ২ রাকাত দিয়ে শুরু করুন এবং ধীরে ধীরে বাড়ান।</li>
-<li>সিজদায় দীর্ঘ দোয়া, ইস্তিগফার ও নিজের প্রয়োজনের কথা আল্লাহকে বলা।</li></ul>
-<h4>যিকির</h4><ul>
-<li>সুবহানাল্লাহ, আলহামদুলিল্লাহ, আল্লাহু আকবার, লা ইলাহা ইল্লাল্লাহ: চলতে-ফিরতে, কাজের ফাঁকে জিহ্বা সিক্ত রাখা।</li>
-<li>আস্তাগফিরুল্লাহ: দিনে কমপক্ষে ১০০ বার।</li>
-<li>দরূদ শরিফ: দিনে অন্তত ১০০ বার বা সামর্থ্য অনুযায়ী।</li>
-<li>লা হাওলা ওয়ালা কুওয়াতা ইল্লা বিল্লাহ: জান্নাতের ভান্ডারসমূহের একটি।</li></ul>
-<h4>প্রতিদিনের মাসনুন দোয়া</h4><ul>
-<li>ঘুম থেকে ওঠা, ঘুমাতে যাওয়া, খাবারের আগে ও পরে, বাথরুমে প্রবেশ ও বের হওয়া, ঘর থেকে বের হওয়া, যানবাহনে ওঠা, মসজিদে প্রবেশ ও বের হওয়ার দোয়া।</li>
-<li>নিজের জন্য, পিতা-মাতা, পরিবার, উস্তাদ ও সমগ্র মুসলিম উম্মাহর জন্য দোয়া।</li>
-<li>দোয়া কবুলের সময়: আযান ও ইকামতের মাঝে, সিজদায়, শেষ রাতে, জুমার দিনের নির্দিষ্ট মুহূর্তে।</li></ul>`],
-['৩. কুরআন তিলাওয়াত ও অধ্যয়ন',`<ul>
-<li><b>তিলাওয়াত:</b> প্রতিদিন কমপক্ষে ১ পারা বা অন্তত ১ রুকু। ফজরের পর বা অন্য কোনো নির্ধারিত সময় ঠিক করুন। প্রতিটি হরফে ১০ নেকি (জামে তিরমিযি)।</li>
-<li><b>তাজবিদ:</b> সহিহ উচ্চারণ শেখা; প্রয়োজনে যোগ্য উস্তাদের কাছে নিয়মিত পাঠ নেওয়া।</li>
-<li><b>অর্থ ও তাফসির:</b> প্রতিদিন কয়েকটি আয়াতের অনুবাদ ও সংক্ষিপ্ত তাফসির পড়া এবং বুঝে আমলের চেষ্টা।</li>
-<li><b>হিফজ:</b> প্রতি সপ্তাহে ছোট একটি সূরা বা কয়েকটি আয়াত মুখস্থ করা; আগের মুখস্থ অংশ নিয়মিত রিভিশন দেওয়া।</li>
-<li><b>খতম:</b> একটি বাস্তবসম্মত পরিকল্পনা। দৈনিক ১ পারা হলে মাসে ১ খতম। রমজানে লক্ষ্য বাড়ানো যায়।</li>
-<li><b>আদব:</b> ওযু অবস্থায়, কিবলামুখী হয়ে, মনোযোগ দিয়ে এবং আগে আউযুবিল্লাহ-বিসমিল্লাহ পড়ে তিলাওয়াত শুরু করা।</li>
-<li><b>নির্দিষ্ট সূরার অভ্যাস:</b> প্রতি রাতে ঘুমের আগে সূরা মুলক; জুমার দিনে সূরা কাহফ।</li></ul>`],
-['৪. সকাল-সন্ধ্যার যিকির ও ফরজ-পরবর্তী আমল',`
-<h4>সকাল-সন্ধ্যার যিকির (ফজরের পর ও আসর/মাগরিবের মধ্যে)</h4>
-<table><tr><th>আমল</th><th>সংখ্যা</th></tr>
-<tr><td>আয়াতুল কুরসি (সূরা বাকারা, ২৫৫)</td><td>১ বার</td></tr>
-<tr><td>সূরা ইখলাস, ফালাক ও নাস</td><td>প্রতিটি ৩ বার</td></tr>
-<tr><td>সাইয়্যিদুল ইস্তিগফার</td><td>১ বার</td></tr>
-<tr><td>সুবহানাল্লাহি ওয়া বিহামদিহি</td><td>১০০ বার</td></tr>
-<tr><td>লা ইলাহা ইল্লাল্লাহু ওয়াহদাহু লা শারিকা লাহু, লাহুল মুলকু ওয়া লাহুল হামদু ওয়া হুয়া আলা কুল্লি শাইয়িন কাদির</td><td>১০ বার বা ১০০ বার</td></tr>
-<tr><td>বিসমিল্লাহিল্লাযি লা ইয়াদুররু মা\u2019আসমিহি শাইউন...</td><td>৩ বার</td></tr>
-<tr><td>দরূদ শরিফ</td><td>১০ বার বা বেশি</td></tr></table>
-<h4>ফরজ সালাতের পর</h4><ul>
-<li>আস্তাগফিরুল্লাহ: ৩ বার।</li>
-<li>আল্লাহুম্মা আনতাস সালাম ওয়া মিনকাস সালাম, তাবারাকতা ইয়া যাল জালালি ওয়াল ইকরাম।</li>
-<li>আয়াতুল কুরসি: ১ বার (সালাতের পর পড়লে জান্নাতে প্রবেশে মৃত্যু ছাড়া আর কোনো বাধা থাকে না, সুনানে নাসায়ি)।</li>
-<li>সুবহানাল্লাহ ৩৩ বার, আলহামদুলিল্লাহ ৩৩ বার, আল্লাহু আকবার ৩৩ বার (বা ৩৪ বার), এরপর শতপূরণে "লা ইলাহা ইল্লাল্লাহু ওয়াহদাহু..."।</li>
-<li>ফজর ও মাগরিবের পর সূরা ইখলাস, ফালাক ও নাস ৩ বার করে।</li>
-<li>এরপর হাত তুলে নিজের মতো দোয়া।</li></ul>`],
-['৫. সাপ্তাহিক আমল',`
-<table><tr><th>দিন</th><th>বিশেষ আমল</th></tr>
-<tr><td>সোমবার</td><td>নফল রোজা (সুন্নত); পরিবারের সবার খোঁজখবর; সপ্তাহের কাজের পরিকল্পনা ও নিয়ত ঠিক করা।</td></tr>
-<tr><td>মঙ্গলবার</td><td>সাদাকা (সামর্থ্য অনুযায়ী); কুরআনের তাফসির অধ্যয়নে সময় দেওয়া।</td></tr>
-<tr><td>বুধবার</td><td>আত্মীয়-স্বজনের সাথে ফোনে বা সরাসরি যোগাযোগ (সিলায়ে রেহমি); দোয়া ও ইস্তিগফারে সময় বাড়ানো।</td></tr>
-<tr><td>বৃহস্পতিবার</td><td>নফল রোজা (সুন্নত); সপ্তাহের আমলের হিসাব; কবর জিয়ারত ও মৃতদের জন্য দোয়া।</td></tr>
-<tr><td>শুক্রবার (জুমা)</td><td>নিচের জুমার বিশেষ আমলগুলো।</td></tr>
-<tr><td>শনিবার</td><td>দ্বীনি ইলমের মজলিসে বসা বা দ্বীনি বই পড়া; অসুস্থ বা অসহায়কে দেখতে যাওয়া।</td></tr>
-<tr><td>রবিবার</td><td>পরিবারকে নিয়ে দ্বীনি আলোচনা বা একসাথে কুরআন পাঠ; ঘরের সবাইকে নিয়ে সপ্তাহের পর্যালোচনা।</td></tr></table>
-<div class="note">সোমবার ও বৃহস্পতিবার রোজা রাখা সুন্নত। এ দুই দিন বান্দার আমল আল্লাহর কাছে পেশ করা হয় (জামে তিরমিযি)। অন্য দিনগুলোর কর্মসূচি পরামর্শমূলক; সময় ও সামর্থ্য অনুযায়ী পরিবর্তন করা যায়।</div>
-<h4>জুমার বিশেষ আমল</h4><ul>
-<li>গোসল করা, পরিষ্কার ও সুন্দর পোশাক পরা, মিসওয়াক ও আতর (পুরুষদের জন্য) ব্যবহার করা।</li>
-<li>আগে ভাগে মসজিদে যাওয়া এবং মনোযোগ দিয়ে খুতবা শোনা (খুতবার সময় কথা বলা থেকে বিরত থাকা)।</li>
-<li>সূরা কাহফ তিলাওয়াত: দুই জুমার মধ্যবর্তী সময় নূরে আলোকিত থাকার সুসংবাদ আছে।</li>
-<li>বেশি বেশি দরূদ পাঠ।</li>
-<li>দোয়া কবুলের বিশেষ মুহূর্ত রয়েছে; আলেমদের মতে আসরের পর থেকে মাগরিবের আগে দোয়ায় মশগুল থাকা উত্তম।</li>
-<li>সাদাকা করা এবং আত্মীয়-স্বজন ও প্রতিবেশীর খোঁজ নেওয়া।</li></ul>`],
-['৬. মাসিক আমল (আইয়্যামে বীজ ও অন্যান্য)',`
-<h4>আইয়্যামে বীজ: ১৩, ১৪ ও ১৫ তারিখের নফল রোজা</h4>
-<p>প্রতি আরবি (হিজরি) মাসের ১৩, ১৪ ও ১৫ তারিখে নফল রোজা রাখা মুস্তাহাব। রাসুলুল্লাহ ﷺ প্রতি মাসে তিন দিন রোজা রাখার উৎসাহ দিয়েছেন, যা পুরো বছর রোজা রাখার সমতুল্য (সহিহ বুখারি ও মুসলিম)।</p>
-<div class="note">লক্ষ রাখুন: তারিখগুলো হিজরি চান্দ্র মাস অনুযায়ী, ইংরেজি বা বাংলা মাসের তারিখ নয়। চাঁদ দেখা সাপেক্ষে স্থানীয় ক্যালেন্ডার দেখে নিন। রাতে নিয়ত করা, সাহরি খাওয়া এবং সময়মতো ইফতার করা সুন্নত।</div>
-<h4>মাসের অন্যান্য আমল</h4><ul>
-<li>প্রতি মাসে অন্তত একবার কুরআন খতমের লক্ষ্য রাখা।</li>
-<li>মাসের শুরুতে নতুন লক্ষ্য ও পরিকল্পনা ঠিক করা, শেষে মূল্যায়ন করা।</li>
-<li>নিয়মিত মাসিক সাদাকা: অল্প হলেও স্থায়ী দান (যেমন মাসে একটি নির্দিষ্ট অংশ)।</li>
-<li>আত্মীয়-স্বজন, বন্ধু ও প্রতিবেশীর বাড়িতে সৌজন্য সাক্ষাৎ; কারো সাথে মনোমালিন্য থাকলে মিটিয়ে নেওয়া।</li>
-<li>দ্বীনি কোনো বই (সিরাত, হাদিস, ফিকহ বা তাযকিয়া) সম্পূর্ণ পড়ার চেষ্টা।</li>
-<li>মাসিক হিসাব মেলানো: আয়-ব্যয়, হালাল-হারামের সতর্কতা এবং দান-সাদাকার হিসাব।</li></ul>`],
-['৭. বার্ষিক বিশেষ আমল',`
-<table><tr><th>সময়</th><th>আমল</th></tr>
-<tr><td>মুহাররম</td><td>আশুরার রোজা (৯ ও ১০, অথবা ১০ ও ১১ মুহাররম); পূর্ববর্তী এক বছরের গুনাহের কাফফারা হিসেবে আশা করা হয় (সহিহ মুসলিম)।</td></tr>
-<tr><td>রবিউল আউয়াল</td><td>সিরাতুন্নবী ﷺ অধ্যয়ন, নবীজির জীবনাদর্শ পরিবারে আলোচনা। (প্রচলিত কিছু আনুষ্ঠানিকতা সম্পর্কে আলেমদের মতভেদ আছে; সুন্নাহসম্মত পথ ধরে থাকুন।)</td></tr>
-<tr><td>শা\u2019বান</td><td>নফল রোজা বাড়ানো (রাসুলুল্লাহ ﷺ শা\u2019বানে বেশি রোজা রাখতেন), রমজানের প্রস্তুতি। ১৫ শা\u2019বানের রাত ও দিন নিয়ে বর্ণনার মান ও মত নিয়ে আলেমদের মতভেদ আছে; এ বিষয়ে নির্ভরযোগ্য আলেমের পরামর্শ নিন।</td></tr>
-<tr><td>রমজান</td><td>সিয়াম, তারাবিহ, কুরআন খতম, শেষ দশকে ই\u2019তিকাফ ও লাইলাতুল কদর অনুসন্ধান (শেষ দশকের বেজোড় রাত), বেশি দান, যাকাত ও সাদাকাতুল ফিতর।</td></tr>
-<tr><td>শাওয়াল</td><td>ঈদুল ফিতর; শাওয়ালের ছয় রোজা (রমজানের পর), যা পুরো বছর রোজা রাখার সমতুল্য (সহিহ মুসলিম)।</td></tr>
-<tr><td>জিলহজ</td><td>প্রথম ১০ দিন সবচেয়ে প্রিয় আমলের সময়; বেশি বেশি যিকির-তাকবীর-তাহলিল; আরাফা দিবসের (৯ জিলহজ) রোজা (হাজি নন এমনদের জন্য); ঈদুল আযহা ও কোরবানি (সামর্থ্যবানদের জন্য ওয়াজিব)।</td></tr>
-<tr><td>সারা বছর</td><td>নিসাব পূর্ণ হলে বছর শেষে যাকাত আদায়; সামর্থ্যবান হলে জীবনে একবার হজ ও উমরা; ঋণ পরিশোধ ও সম্পর্ক ঠিক করা।</td></tr></table>
-<div class="note">যাকাতের হিসাব, কোরবানির বিধান বা হজের সামর্থ্য: এসব বিষয়ে নির্দিষ্ট প্রশ্ন থাকলে আলেম বা নির্ভরযোগ্য ইসলামি প্রতিষ্ঠানের কাছ থেকে জেনে নিন।</div>`],
-['৮. পরিবার, কর্মক্ষেত্র, অর্থনীতি ও চরিত্র গঠন',`
-<h4>পরিবার</h4><ul>
-<li>পিতা-মাতার সেবা, তাঁদের জন্য দোয়া, তাঁদের সাথে নম্র আচরণ। বেঁচে থাকলে নিয়মিত দেখা ও খোঁজখবর; মৃত হলে দোয়া ও সাদাকা।</li>
-<li>স্ত্রী/স্বামীর সাথে সদ্ব্যবহার, পরামর্শ করে সিদ্ধান্ত, একে অপরের হক আদায়।</li>
-<li>সন্তানদের ছোটবেলা থেকে সালাত, দোয়া ও আদব শেখানো; তাদের সময় দেওয়া ও খেলাধুলা-পড়াশোনায় উৎসাহ।</li>
-<li>পরিবারে কিছু সময় একসাথে কুরআন বা হাদিস পাঠ এবং ইসলামি ঘটনা আলোচনা।</li>
-<li>আত্মীয়দের সাথে সম্পর্ক বজায় রাখা (সিলায়ে রেহমি); সম্পর্ক ছিন্নকারী না হওয়া।</li></ul>
-<h4>কর্মক্ষেত্র</h4><ul>
-<li>ঠিক সময়ে উপস্থিত হওয়া, কাজে ফাঁকি না দেওয়া এবং কাজকে ইবাদতের নিয়তে করা।</li>
-<li>আমানতদারি রক্ষা করা; হিসাব, নথি ও তথ্যে সততা বজায় রাখা। ঘুষ, অনৈতিক কমিশন ও প্রতারণা থেকে সম্পূর্ণ দূরে থাকা।</li>
-<li>সহকর্মী ও অধস্তনদের সাথে ন্যায্য, নম্র ও সম্মানজনক আচরণ; গিবত, চোগলখুরি ও অপবাদ পরিহার।</li>
-<li>ওয়াক্তমতো সালাত আদায়ের সুযোগ করে নেওয়া এবং কাজের মধ্যে ছোট ছোট যিকির।</li>
-<li>দক্ষতা বাড়ানো ও পেশাগত জ্ঞান অর্জন: ভালোভাবে কাজ করা ইসলামের নির্দেশ (ইহসান)।</li></ul>
-<h4>অর্থনীতি</h4><ul>
-<li>হালাল উপার্জন ও হালাল ব্যয়; সুদ, ঘুষ, প্রতারণা ও অবৈধ লেনদেন থেকে বিরত থাকা।</li>
-<li>অপচয় ও কৃপণতা, উভয় থেকে বেঁচে মধ্যপন্থা অবলম্বন।</li>
-<li>আয়ের হিসাব রাখা, বাজেট করা, প্রয়োজনের জন্য সঞ্চয় রাখা।</li>
-<li>ঋণ থাকলে যত দ্রুত সম্ভব পরিশোধের চেষ্টা; অন্যের পাওনা ঠিক সময়ে ফেরত দেওয়া।</li>
-<li>যাকাত যথাযথভাবে আদায় এবং নিয়মিত সাদাকা। দান গোপনে করা উত্তম।</li>
-<li>লেনদেনে সততা ও স্বচ্ছতা; চুক্তি ও ওয়াদা রক্ষা।</li></ul>
-<h4>চরিত্র গঠন</h4><ul>
-<li><b>সত্যবাদিতা:</b> কথায় ও কাজে সত্য বলা, মিথ্যা পরিহার।</li>
-<li><b>সবর ও কৃতজ্ঞতা:</b> বিপদে সবর এবং নেয়ামতে শুকরিয়া।</li>
-<li><b>বিনয় ও ক্ষমা:</b> অহংকার ত্যাগ, রাগ নিয়ন্ত্রণ, অন্যকে ক্ষমা করা।</li>
-<li><b>জিহ্বার হেফাজত:</b> গিবত, অপবাদ, ঠাট্টা-বিদ্রূপ ও অনর্থক কথা থেকে বিরত থাকা।</li>
-<li><b>দৃষ্টি ও অন্তরের হেফাজত:</b> হিংসা, অহংকার ও লোক-দেখানো ভাব (রিয়া) থেকে নিজেকে পরিষ্কার রাখা।</li>
-<li><b>সদাচার:</b> প্রতিবেশীর হক, মেহমানের সম্মান, সালামের প্রসার ও মুচকি হাসি।</li>
-<li><b>তাওবা:</b> ভুল হলে দ্রুত ইস্তিগফার ও সংশোধন।</li></ul>`]
+['১. নিত্য পাঁচ ওয়াক্ত সালাত ও জামাত',`<p class="mute">নিয়ম: আমলের ক্ষেত্রে ফরজ ও ওয়াজিব সবার আগে, এরপর সুন্নত ও নফল।</p>`],
+['২. তাহাজ্জুদ, যিকির ও দোয়া',`<p class="mute">রাতের শেষ তৃতীয়াংশে তাহাজ্জুদ ও জিকির।</p>`],
+['৩. কুরআন তিলাওয়াত ও অধ্যয়ন',`<p class="mute">প্রতিদিন তিলাওয়াত ও তাফসির।</p>`],
+['৪. সকাল-সন্ধ্যার যিকির ও ফরজ-পরবর্তী আমল',`<p class="mute">মাসনুন জিকির ও দোয়া।</p>`],
+['৫. সাপ্তাহিক আমল',`<p class="mute">সোমবার ও বৃহস্পতিবার রোজা এবং জুমা।</p>`],
+['৬. মাসিক আমল (আইয়্যামে বীজ ও অন্যান্য)',`<p class="mute">১৩, ১৪ ও ১৫ তারিখের রোজা।</p>`],
+['৭. বার্ষিক বিশেষ আমল',`<p class="mute">রমজান, আশুরা ও জিলহজ।</p>`],
+['৮. পরিবার, কর্মক্ষেত্র, অর্থনীতি ও চরিত্র গঠন',`<p class="mute">সততা ও উত্তম চরিত্র।</p>`]
 ];
+
 function renderGuide(){
   $('#app').innerHTML=GUIDE.map(([t,b])=>`<details><summary>${t}</summary><div class="in">${b}</div></details>`).join('')+
   `<div class="card ar" style="color:var(--pri)">رَبَّنَا تَقَبَّلْ مِنَّا ۖ إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ<div class="mute" style="direction:ltr;font-size:14px">হে আমাদের রব, আমাদের পক্ষ থেকে কবুল করুন; নিশ্চয়ই আপনি সর্বশ্রোতা, সর্বজ্ঞ।</div></div>`;
 }
 
-/* ---------- monthly review ---------- */
 const MROWS=[
- ['jamaat','জামাতে সালাতের ধারাবাহিকতা (দিন সংখ্যা)','A:J5','৫ ওয়াক্তই জামাতে'],
+ ['jamaat','৫ ওয়াক্ত সালাত জামাতে আদায় (দিন সংখ্যা)','M_SALAT','৫ ওয়াক্তই জামাতে'],
  ['tahajjud','তাহাজ্জুদ (রাত সংখ্যা)','A:f3'],
  ['quran','কুরআন তিলাওয়াত (পারা/পৃষ্ঠা) ও খতম','M'],
- ['tafsir','কুরআনের অর্থ/তাফসির অধ্যয়ন','A:f5'],
- ['bij','১৩, ১৪, ১৫ তারিখের রোজা','B'],
- ['monthu','সোমবার-বৃহস্পতিবারের নফল রোজা (সংখ্যা)','M'],
  ['zikr','সকাল-সন্ধ্যার যিকির (দিন সংখ্যা)','A:f6'],
  ['sadaqa','সাদাকা/দান (পরিমাণ বা সংখ্যা)','M'],
- ['ilm','দ্বীনি বই/ইলম অর্জন','M'],
  ['family','পরিবার ও আত্মীয়দের সাথে সম্পর্ক','A:f9'],
  ['honesty','কর্মক্ষেত্রে সততা ও আমানতদারি','A:f10'],
- ['halal','আয়-ব্যয়ের হিসাব ও হালাল-হারামের সতর্কতা','A:f11'],
- ['char','চারিত্রিক দুর্বলতা (রাগ, গিবত, মিথ্যা ইত্যাদি) ও উন্নতি','A:f12','দিন বেঁচে থেকেছি']
+ ['halal','হালাল-হারামের সতর্কতা','A:f11']
 ];
+
 function mon(k){return S.months[k]||(S.months[k]={m:{},g:{},b:[false,false,false],a:'',b2:'',p1:'',p2:'',p3:''})}
+
 function autoCount(ym,spec){
-  let n=0,tot=0;
+  let n=0;
   Object.keys(S.days).forEach(k=>{
-    if(k.slice(0,7)!==ym)return;tot++;
+    if(k.slice(0,7)!==ym)return;
     const d=S.days[k];
-    if(spec==='J5'){if(d.jamaat===5)n++}else if(d.c[spec])n++;
+    if(spec==='M_SALAT'){
+      let allJamaat = true;
+      SALAT_LIST.forEach(([id])=>{ if(d.salats[id] !== 'jamaat') allJamaat=false; });
+      if(allJamaat) n++;
+    } else if(spec.startsWith('A:')){
+      if(d.c[spec.slice(2)]) n++;
+    }
   });
   return n;
 }
+
 function renderMonth(){
   const ym=mkey(mcur),M=mon(ym);
   let html=`<div class="card"><div class="datebar"><button id="mp">‹</button><div class="mid"><b>${GM[mcur.getMonth()]} ${bn(mcur.getFullYear())}</b><small>মাসিক আত্মপর্যালোচনা</small></div><button id="mn">›</button></div></div>`;
@@ -363,11 +322,9 @@ function renderMonth(){
   MROWS.forEach(([k,label,type,suffix])=>{
     html+=`<div class="mrow"><div class="t">${label}</div><div class="two"><div>`;
     html+=`<div class="mute">এ মাসে</div>`;
-    if(type.startsWith('A:')){
-      const n=autoCount(ym,type.slice(2));
+    if(type==='M_SALAT' || type.startsWith('A:')){
+      const n=autoCount(ym,type);
       html+=`<div class="auto">${bn(n)} দিন${suffix?'':''}</div>`;
-    }else if(type==='B'){
-      html+=`<div class="chips">${[13,14,15].map((n,i)=>`<label><input type="checkbox" data-b="${i}"${M.b[i]?' checked':''}> ${bn(n)}</label>`).join('')}</div>`;
     }else{
       html+=`<input type="text" data-m="${k}" value="${esc(M.m[k])}">`;
     }
@@ -379,18 +336,15 @@ function renderMonth(){
    <div class="mute" style="margin-top:8px">পরের মাসের ৩টি অগ্রাধিকার</div>
    <input type="text" data-s="p1" placeholder="১)" value="${esc(M.p1)}" style="margin-bottom:6px">
    <input type="text" data-s="p2" placeholder="২)" value="${esc(M.p2)}" style="margin-bottom:6px">
-   <input type="text" data-s="p3" placeholder="৩)" value="${esc(M.p3)}"></div>
-   <div class="mute" style="padding:0 6px">“এ মাসে” কলামের দিন-সংখ্যাগুলো আপনার দৈনিক হিসাব থেকে নিজে থেকেই গণনা হয়।</div>`;
+   <input type="text" data-s="p3" placeholder="৩)" value="${esc(M.p3)}"></div>`;
   $('#app').innerHTML=html;
   $('#mp').onclick=()=>{mcur=new Date(mcur.getFullYear(),mcur.getMonth()-1,1);render()};
   $('#mn').onclick=()=>{mcur=new Date(mcur.getFullYear(),mcur.getMonth()+1,1);render()};
   document.querySelectorAll('[data-m]').forEach(el=>el.oninput=()=>{M.m[el.dataset.m]=el.value;save()});
   document.querySelectorAll('[data-g]').forEach(el=>el.oninput=()=>{M.g[el.dataset.g]=el.value;save()});
-  document.querySelectorAll('[data-b]').forEach(el=>el.onchange=()=>{M.b[+el.dataset.b]=el.checked;save()});
   document.querySelectorAll('[data-s]').forEach(el=>el.oninput=()=>{M[el.dataset.s]=el.value;save()});
 }
 
-/* ---------- more / settings ---------- */
 let deferred=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(view==='more')render()});
 function renderMore(){
@@ -404,15 +358,11 @@ function renderMore(){
      isIOS?'<p>iPhone/iPad: Safari-তে নিচের Share বাটন চেপে "Add to Home Screen" দিন।</p>':
      '<p>Chrome মেনু (⋮) থেকে "Install app" বা "Add to Home screen" দিন।</p>'}</div>
   <div class="card"><h3>হিজরি তারিখ সমন্বয়</h3>
-   <p class="mute">১৩-১৪-১৫ তারিখের রোজা ও বিশেষ দিনের রিমাইন্ডার হিজরি ক্যালেন্ডার থেকে আনুমানিক হিসাব করা হয়। বাংলাদেশে চাঁদ দেখা সৌদির সাথে এক দিন এদিক-ওদিক হতে পারে। প্রয়োজনে এখানে মিলিয়ে নিন।</p>
-   <select id="off"><option value="-1"${off===-1?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option><option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option><option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option><option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ২ দিন পরে</option></select>
-   <p class="mute" style="margin-top:8px">আজকের হিসাব: ${(()=>{const h=hijri(new Date());return h?bn(h.d)+' '+HM[h.m-1]+' '+bn(h.y):'পাওয়া যায়নি'})()}</p></div>
+   <select id="off"><option value="-1"${off===-1?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option><option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option><option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option><option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ১ দিন পরে (সাধারণত বাংলাদেশ)</option><option value="0"${off===0?' selected':''}>সৌদি আরবের সাথে একই</option><option value="1"${off===1?' selected':''}>সৌদির চেয়ে ১ দিন আগে</option><option value="-2"${off===-2?' selected':''}>সৌদির চেয়ে ২ দিন পরে</option></select></div>
   <div class="card"><h3>ব্যাকআপ</h3>
-   <p class="mute">আপনার সব তথ্য শুধু এই ফোনের ব্রাউজারে সংরক্ষিত থাকে। ফোন বদলালে বা ব্রাউজার ডেটা মুছলে হারিয়ে যেতে পারে। তাই মাঝেমধ্যে ব্যাকআপ নিয়ে রাখুন।</p>
    <button class="btn" id="exp">ব্যাকআপ ডাউনলোড</button>
    <button class="btn alt" id="imp">ব্যাকআপ থেকে ফিরিয়ে আনুন</button>
-   <input type="file" id="file" accept="application/json" style="display:none"></div>
-  <div class="card"><h3>সতর্কতা</h3><p class="mute">এটি একটি ব্যক্তিগত আমল-ট্র্যাকার। ফিকহি কোনো মাসআলায় সন্দেহ থাকলে নির্ভরযোগ্য আলেমের কাছ থেকে জেনে নিন।</p></div>`;
+   <input type="file" id="file" accept="application/json" style="display:none"></div>`;
   if($('#inst'))$('#inst').onclick=async()=>{deferred.prompt();await deferred.userChoice;deferred=null;render()};
   $('#off').onchange=e=>{S.settings.offset=+e.target.value;save();render()};
   $('#exp').onclick=()=>{
